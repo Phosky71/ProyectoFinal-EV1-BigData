@@ -1,0 +1,19 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+
+# Aqui se agregaran los proyectos cuando se creen:
+# - src/Backend/API/API.csproj
+# - src/Backend/Persistence/Persistence.csproj
+# - src/Backend/MCP/MCP.csproj
+# - src/Frontend/ConsoleApp/ConsoleApp.csproj
+# - src/Frontend/WPFApp/WPFApp.csproj
+# - src/Frontend/MAUIApp/MAUIApp.csproj
+
+Global
+    GlobalSection(SolutionConfigurationPlatforms) = preSolution
+        Debug|Any CPU = Debug|Any CPU
+        Release|Any CPU = Release|Any CPU
+    EndGlobalSection
+EndGlobal
