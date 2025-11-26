@@ -1,38 +1,39 @@
-// MCPServer.cs - Servidor del protocolo MCP
-// Procesa consultas en lenguaje natural sobre la base de datos
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Backend.MCP.Routers;
+using Backend.Persistence.Interfaces;
+using Backend.API.Models;
 
 namespace Backend.MCP.Server
 {
-    /// <summary>
-    /// Servidor MCP para consultas en lenguaje natural
-    /// Utiliza los routers para procesar las peticiones
-    /// </summary>
     public class MCPServer
     {
-        private readonly RuleRouter _ruleRouter;
-        private readonly LLMRouter _llmRouter;
-        
-        public MCPServer(RuleRouter ruleRouter, LLMRouter llmRouter)
+        private readonly List<IMCPRouter> _routers;
+
+        public MCPServer(IRepository<Card> repository)
         {
-            _ruleRouter = ruleRouter;
-            _llmRouter = llmRouter;
+            _routers = new List<IMCPRouter>
+            {
+                new RuleRouter(repository),
+                new LLMRouter()
+            };
         }
-        
-        /// <summary>
-        /// Procesa una consulta en lenguaje natural
-        /// 1. Primero intenta con el enrutador de reglas
-        /// 2. Si no encuentra regla, usa el LLM
-        /// </summary>
-        public async Task<string> ProcessQueryAsync(string naturalLanguageQuery)
+
+        public async Task<string> ProcessQueryAsync(string query)
         {
-            // Intentar primero con reglas manuales
-            var result = await _ruleRouter.TryRouteAsync(naturalLanguageQuery);
-            
-            if (result != null)
-                return result;
-            
-            // Si no hay regla, usar LLM
-            return await _llmRouter.RouteAsync(naturalLanguageQuery);
+            foreach (var router in _routers)
+            {
+                if (router.CanHandle(query))
+                {
+                    // If it's the RuleRouter, it might return a result or pass if it can't really handle it (though CanHandle checks regex).
+                    // For LLM, it's a catch-all.
+                    // We can refine this logic.
+                    if (router is RuleRouter && !router.CanHandle(query)) continue;
+                    
+                    return await router.ProcessRequestAsync(query);
+                }
+            }
+            return "No router could handle the request.";
         }
     }
 }

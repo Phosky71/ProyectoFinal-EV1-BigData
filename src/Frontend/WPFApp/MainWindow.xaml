@@ -1,0 +1,21 @@
+<Window x:Class="Frontend.WPFApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Proyecto Final EV1 - WPF MDI" Height="600" Width="800" WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="File">
+                <MenuItem Header="Exit" Click="Exit_Click"/>
+            </MenuItem>
+            <MenuItem Header="Windows">
+                <MenuItem Header="Master View" Click="OpenMaster_Click"/>
+                <MenuItem Header="MCP Chat" Click="OpenMCP_Click"/>
+                <MenuItem Header="Configuration" Click="OpenConfig_Click"/>
+            </MenuItem>
+        </Menu>
+        <Grid Name="MdiContainer" Background="Gray">
+            <!-- Child windows will be added here or opened as separate windows -->
+            <TextBlock Text="MDI Container - Select a Window from the Menu" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White" FontSize="20"/>
+        </Grid>
+    </DockPanel>
+</Window>

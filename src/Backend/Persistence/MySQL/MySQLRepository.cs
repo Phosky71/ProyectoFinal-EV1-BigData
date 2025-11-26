@@ -1,125 +1,180 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
+using Backend.API.Models;
+using Backend.Persistence.Interfaces;
 using MySql.Data.MySqlClient;
-using ProyectoFinal.Backend.Persistence.Interfaces;
 
-namespace ProyectoFinal.Backend.Persistence.MySQL
+namespace Backend.Persistence.MySQL
 {
-    /// <summary>
-    /// Implementacion del repositorio usando MySQL como sistema de persistencia.
-    /// Implementa el patron Open/Close permitiendo intercambiar con MemoryRepository.
-    /// </summary>
-    /// <typeparam name="T">Tipo de entidad</typeparam>
-    public class MySQLRepository<T> : IRepository<T> where T : class, new()
+    public class MySQLRepository : IRepository<Card>
     {
         private readonly string _connectionString;
-        private readonly string _tableName;
 
-        public MySQLRepository(string connectionString, string tableName)
+        public MySQLRepository(string connectionString)
         {
             _connectionString = connectionString;
-            _tableName = tableName;
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync()
+        private MySqlConnection GetConnection()
         {
-            var results = new List<T>();
-            
-            using var connection = new MySqlConnection(_connectionString);
-            await connection.OpenAsync();
-            
-            var command = new MySqlCommand($"SELECT * FROM {_tableName}", connection);
-            using var reader = await command.ExecuteReaderAsync();
-            
-            while (await reader.ReadAsync())
-            {
-                // TODO: Implementar mapeo de columnas a propiedades
-                var entity = MapReaderToEntity(reader);
-                results.Add(entity);
-            }
-            
-            return results;
+            return new MySqlConnection(_connectionString);
         }
 
-        public async Task<T?> GetByIdAsync(int id)
+        public async Task<IEnumerable<Card>> GetAllAsync()
         {
-            using var connection = new MySqlConnection(_connectionString);
-            await connection.OpenAsync();
-            
-            var command = new MySqlCommand($"SELECT * FROM {_tableName} WHERE Id = @Id", connection);
-            command.Parameters.AddWithValue("@Id", id);
-            
-            using var reader = await command.ExecuteReaderAsync();
-            
-            if (await reader.ReadAsync())
+            var list = new List<Card>();
+            using (var conn = GetConnection())
             {
-                return MapReaderToEntity(reader);
+                await conn.OpenAsync();
+                var cmd = new MySqlCommand("SELECT * FROM Cards", conn);
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        list.Add(MapReaderToCard(reader));
+                    }
+                }
             }
-            
+            return list;
+        }
+
+        public async Task<Card> GetByIdAsync(string id)
+        {
+            using (var conn = GetConnection())
+            {
+                await conn.OpenAsync();
+                var cmd = new MySqlCommand("SELECT * FROM Cards WHERE Id = @Id", conn);
+                cmd.Parameters.AddWithValue("@Id", id);
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    if (await reader.ReadAsync())
+                    {
+                        return MapReaderToCard(reader);
+                    }
+                }
+            }
             return null;
         }
 
-        public async Task<T> AddAsync(T entity)
+        public async Task AddAsync(Card entity)
         {
-            // TODO: Implementar insercion dinamica basada en propiedades
-            using var connection = new MySqlConnection(_connectionString);
-            await connection.OpenAsync();
-            
-            // Ejemplo basico - ajustar segun la entidad
-            var command = new MySqlCommand(
-                $"INSERT INTO {_tableName} (/* columns */) VALUES (/* values */); SELECT LAST_INSERT_ID();",
-                connection);
-            
-            var id = await command.ExecuteScalarAsync();
-            // TODO: Asignar ID a la entidad
-            
-            return entity;
+            using (var conn = GetConnection())
+            {
+                await conn.OpenAsync();
+                var cmd = new MySqlCommand("INSERT INTO Cards (Id, Name, ManaCost, Type, Rarity, SetName, Text, Power, Toughness, ImageUrl, MultiverseId) VALUES (@Id, @Name, @ManaCost, @Type, @Rarity, @SetName, @Text, @Power, @Toughness, @ImageUrl, @MultiverseId)", conn);
+                AddParameters(cmd, entity);
+                await cmd.ExecuteNonQueryAsync();
+            }
         }
 
-        public async Task<T> UpdateAsync(T entity)
+        public async Task UpdateAsync(Card entity)
         {
-            // TODO: Implementar actualizacion dinamica basada en propiedades
-            using var connection = new MySqlConnection(_connectionString);
-            await connection.OpenAsync();
-            
-            var command = new MySqlCommand(
-                $"UPDATE {_tableName} SET /* columns = values */ WHERE Id = @Id",
-                connection);
-            
-            await command.ExecuteNonQueryAsync();
-            
-            return entity;
+            using (var conn = GetConnection())
+            {
+                await conn.OpenAsync();
+                var cmd = new MySqlCommand("UPDATE Cards SET Name=@Name, ManaCost=@ManaCost, Type=@Type, Rarity=@Rarity, SetName=@SetName, Text=@Text, Power=@Power, Toughness=@Toughness, ImageUrl=@ImageUrl, MultiverseId=@MultiverseId WHERE Id=@Id", conn);
+                AddParameters(cmd, entity);
+                await cmd.ExecuteNonQueryAsync();
+            }
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task DeleteAsync(string id)
         {
-            using var connection = new MySqlConnection(_connectionString);
-            await connection.OpenAsync();
-            
-            var command = new MySqlCommand($"DELETE FROM {_tableName} WHERE Id = @Id", connection);
-            command.Parameters.AddWithValue("@Id", id);
-            
-            var rowsAffected = await command.ExecuteNonQueryAsync();
-            return rowsAffected > 0;
+            using (var conn = GetConnection())
+            {
+                await conn.OpenAsync();
+                var cmd = new MySqlCommand("DELETE FROM Cards WHERE Id = @Id", conn);
+                cmd.Parameters.AddWithValue("@Id", id);
+                await cmd.ExecuteNonQueryAsync();
+            }
         }
 
-        public async Task<int> LoadFromFileAsync(string filePath)
+        public async Task LoadDataAsync(string sourcePath)
         {
-            // TODO: Implementar carga de datos desde archivo CSV/JSON
-            // Usar LOAD DATA INFILE para mejor rendimiento
-            throw new NotImplementedException("Implementar carga desde archivo");
+            // In a real scenario, this might use LOAD DATA INFILE or bulk insert.
+            // For this project, we will rely on the SQL script or manual insertion, 
+            // but to satisfy the interface, we could implement a bulk insert here if needed.
+            // However, the requirement says "Carga de datos a ambos sistemas".
+            // So we should implement it. We can reuse the CSV parsing logic from MemoryRepository or use a shared helper.
+            
+            // For simplicity in this file, we will throw NotImplemented or leave empty if the user is expected to run the SQL script.
+            // BUT, the prompt says "Descarga... y carga de datos".
+            // So I will implement a basic loop to insert data.
+            
+            var memoryRepo = new Memory.MemoryRepository();
+            await memoryRepo.LoadDataAsync(sourcePath);
+            var cards = await memoryRepo.GetAllAsync();
+            
+            using (var conn = GetConnection())
+            {
+                await conn.OpenAsync();
+                // Create table if not exists
+                var createTableCmd = new MySqlCommand(@"
+                    CREATE TABLE IF NOT EXISTS Cards (
+                        Id VARCHAR(255) PRIMARY KEY,
+                        Name VARCHAR(255),
+                        ManaCost VARCHAR(50),
+                        Type VARCHAR(255),
+                        Rarity VARCHAR(50),
+                        SetName VARCHAR(255),
+                        Text TEXT,
+                        Power VARCHAR(50),
+                        Toughness VARCHAR(50),
+                        ImageUrl TEXT,
+                        MultiverseId VARCHAR(50)
+                    )", conn);
+                await createTableCmd.ExecuteNonQueryAsync();
+
+                foreach (var card in cards)
+                {
+                    // Check if exists
+                    var checkCmd = new MySqlCommand("SELECT COUNT(*) FROM Cards WHERE Id = @Id", conn);
+                    checkCmd.Parameters.AddWithValue("@Id", card.Id);
+                    long count = (long)await checkCmd.ExecuteScalarAsync();
+                    
+                    if (count == 0)
+                    {
+                        var insertCmd = new MySqlCommand("INSERT INTO Cards (Id, Name, ManaCost, Type, Rarity, SetName, Text, Power, Toughness, ImageUrl, MultiverseId) VALUES (@Id, @Name, @ManaCost, @Type, @Rarity, @SetName, @Text, @Power, @Toughness, @ImageUrl, @MultiverseId)", conn);
+                        AddParameters(insertCmd, card);
+                        await insertCmd.ExecuteNonQueryAsync();
+                    }
+                }
+            }
         }
 
-        /// <summary>
-        /// Mapea un reader de MySQL a una entidad.
-        /// </summary>
-        private T MapReaderToEntity(MySqlDataReader reader)
+        private Card MapReaderToCard(IDataReader reader)
         {
-            // TODO: Implementar mapeo usando reflexion o Dapper
-            var entity = new T();
-            // Mapear propiedades...
-            return entity;
+            return new Card
+            {
+                Id = reader["Id"].ToString(),
+                Name = reader["Name"].ToString(),
+                ManaCost = reader["ManaCost"].ToString(),
+                Type = reader["Type"].ToString(),
+                Rarity = reader["Rarity"].ToString(),
+                SetName = reader["SetName"].ToString(),
+                Text = reader["Text"].ToString(),
+                Power = reader["Power"].ToString(),
+                Toughness = reader["Toughness"].ToString(),
+                ImageUrl = reader["ImageUrl"].ToString(),
+                MultiverseId = reader["MultiverseId"].ToString()
+            };
+        }
+
+        private void AddParameters(MySqlCommand cmd, Card entity)
+        {
+            cmd.Parameters.AddWithValue("@Id", entity.Id);
+            cmd.Parameters.AddWithValue("@Name", entity.Name ?? "");
+            cmd.Parameters.AddWithValue("@ManaCost", entity.ManaCost ?? "");
+            cmd.Parameters.AddWithValue("@Type", entity.Type ?? "");
+            cmd.Parameters.AddWithValue("@Rarity", entity.Rarity ?? "");
+            cmd.Parameters.AddWithValue("@SetName", entity.SetName ?? "");
+            cmd.Parameters.AddWithValue("@Text", entity.Text ?? "");
+            cmd.Parameters.AddWithValue("@Power", entity.Power ?? "");
+            cmd.Parameters.AddWithValue("@Toughness", entity.Toughness ?? "");
+            cmd.Parameters.AddWithValue("@ImageUrl", entity.ImageUrl ?? "");
+            cmd.Parameters.AddWithValue("@MultiverseId", entity.MultiverseId ?? "");
         }
     }
 }

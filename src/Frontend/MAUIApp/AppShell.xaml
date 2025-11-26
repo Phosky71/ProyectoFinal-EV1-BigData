@@ -1,0 +1,16 @@
+<Shell xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:local="clr-namespace:Frontend.MAUIApp"
+       x:Class="Frontend.MAUIApp.AppShell">
+
+    <ShellContent
+        Title="Login"
+        ContentTemplate="{DataTemplate local:LoginPage}"
+        Route="LoginPage" />
+
+    <FlyoutItem Title="Main" FlyoutDisplayOptions="AsMultipleItems">
+        <ShellContent Title="Master List" ContentTemplate="{DataTemplate local:MasterPage}" Route="MasterPage" />
+        <ShellContent Title="MCP Chat" ContentTemplate="{DataTemplate local:MCPPage}" Route="MCPPage" />
+    </FlyoutItem>
+
+</Shell>

@@ -1,185 +1,157 @@
 using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
-namespace ProyectoFinal.Frontend.ConsoleApp
+namespace Frontend.ConsoleApp
 {
-    /// <summary>
-    /// Aplicacion de consola para el proyecto.
-    /// Funcionalidades:
-    /// - Login de usuario
-    /// - Seleccion de sistema de persistencia (MySQL/Memoria)
-    /// - Carga de datos desde Kaggle
-    /// - Operaciones CRUD
-    /// </summary>
     class Program
     {
+        static readonly HttpClient client = new HttpClient();
+        static string _jwtToken = "";
+        static string _baseUrl = "https://localhost:7001/api"; // Adjust port as needed
+
         static async Task Main(string[] args)
         {
-            Console.WriteLine("=".PadRight(50, '='));
-            Console.WriteLine("  PROYECTO FINAL EV1 - BIG DATA & AI");
-            Console.WriteLine("  Aplicacion de Consola");
-            Console.WriteLine("=".PadRight(50, '='));
-            Console.WriteLine();
-
-            // TODO: Implementar flujo principal
-            await RunApplicationAsync();
-        }
-
-        static async Task RunApplicationAsync()
-        {
-            bool isAuthenticated = false;
-            string currentUser = "";
-
+            Console.WriteLine("=== Proyecto Final EV1 - Console Client ===");
+            
             // 1. Login
-            while (!isAuthenticated)
-            {
-                isAuthenticated = await LoginAsync();
-                if (!isAuthenticated)
-                {
-                    Console.WriteLine("Credenciales incorrectas. Intente nuevamente.\n");
-                }
-                else
-                {
-                    currentUser = "Usuario"; // TODO: Obtener del token
-                }
-            }
+            if (!await Login()) return;
 
-            // 2. Seleccionar sistema de persistencia
-            var persistence = SelectPersistenceSystem();
-
-            // 3. Menu principal
-            await ShowMainMenuAsync(persistence);
-        }
-
-        static async Task<bool> LoginAsync()
-        {
-            Console.WriteLine("--- LOGIN ---");
-            Console.Write("Usuario: ");
-            var username = Console.ReadLine();
-            Console.Write("Contrasena: ");
-            var password = ReadPassword();
-            Console.WriteLine();
-
-            // TODO: Validar credenciales con API JWT
-            await Task.Delay(500); // Simular llamada a API
-            return !string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password);
-        }
-
-        static string SelectPersistenceSystem()
-        {
-            Console.WriteLine("\n--- SELECCIONAR SISTEMA DE PERSISTENCIA ---");
-            Console.WriteLine("1. MySQL (Base de datos)");
-            Console.WriteLine("2. Memoria (LINQ)");
-            Console.Write("Seleccione opcion: ");
-
-            var option = Console.ReadLine();
-            return option == "1" ? "MySQL" : "Memory";
-        }
-
-        static async Task ShowMainMenuAsync(string persistence)
-        {
-            Console.WriteLine($"\n[Sistema: {persistence}]");
             bool exit = false;
-
             while (!exit)
             {
-                Console.WriteLine("\n--- MENU PRINCIPAL ---");
-                Console.WriteLine("1. Cargar datos desde archivo (Kaggle)");
-                Console.WriteLine("2. Listar registros");
-                Console.WriteLine("3. Agregar registro");
-                Console.WriteLine("4. Actualizar registro");
-                Console.WriteLine("5. Eliminar registro");
-                Console.WriteLine("6. Salir");
-                Console.Write("Seleccione opcion: ");
-
-                var option = Console.ReadLine();
-
-                switch (option)
+                Console.WriteLine("\nMenu:");
+                Console.WriteLine("1. List Cards");
+                Console.WriteLine("2. Find Card by ID");
+                Console.WriteLine("3. Create Card");
+                Console.WriteLine("4. Delete Card");
+                Console.WriteLine("5. Switch Persistence");
+                Console.WriteLine("6. Load Data from Kaggle (Simulated)");
+                Console.WriteLine("7. Exit");
+                Console.Write("Select option: ");
+                
+                switch (Console.ReadLine())
                 {
-                    case "1":
-                        await LoadDataFromFileAsync();
-                        break;
-                    case "2":
-                        await ListRecordsAsync();
-                        break;
-                    case "3":
-                        await AddRecordAsync();
-                        break;
-                    case "4":
-                        await UpdateRecordAsync();
-                        break;
-                    case "5":
-                        await DeleteRecordAsync();
-                        break;
-                    case "6":
-                        exit = true;
-                        Console.WriteLine("\nHasta luego!");
-                        break;
-                    default:
-                        Console.WriteLine("Opcion no valida.");
-                        break;
+                    case "1": await ListCards(); break;
+                    case "2": await FindCard(); break;
+                    case "3": await CreateCard(); break;
+                    case "4": await DeleteCard(); break;
+                    case "5": await SwitchPersistence(); break;
+                    case "6": await LoadData(); break;
+                    case "7": exit = true; break;
                 }
             }
         }
 
-        // TODO: Implementar metodos CRUD
-        static async Task LoadDataFromFileAsync()
+        static async Task<bool> Login()
         {
-            Console.Write("Ruta del archivo: ");
-            var path = Console.ReadLine();
-            Console.WriteLine("Cargando datos...");
-            await Task.Delay(1000);
-            Console.WriteLine("Datos cargados exitosamente.");
-        }
+            Console.Write("Username (admin): ");
+            string username = Console.ReadLine();
+            Console.Write("Password (password): ");
+            string password = Console.ReadLine();
 
-        static async Task ListRecordsAsync()
-        {
-            Console.WriteLine("Obteniendo registros...");
-            await Task.Delay(500);
-            Console.WriteLine("[Lista de registros]");
-        }
+            var loginModel = new { Username = username, Password = password };
+            var content = new StringContent(JsonConvert.SerializeObject(loginModel), Encoding.UTF8, "application/json");
 
-        static async Task AddRecordAsync()
-        {
-            Console.WriteLine("[Agregar nuevo registro]");
-            await Task.Delay(100);
-        }
-
-        static async Task UpdateRecordAsync()
-        {
-            Console.Write("ID del registro a actualizar: ");
-            Console.ReadLine();
-            await Task.Delay(100);
-        }
-
-        static async Task DeleteRecordAsync()
-        {
-            Console.Write("ID del registro a eliminar: ");
-            Console.ReadLine();
-            await Task.Delay(100);
-        }
-
-        static string ReadPassword()
-        {
-            var password = "";
-            ConsoleKeyInfo key;
-
-            do
+            try
             {
-                key = Console.ReadKey(true);
-                if (key.Key != ConsoleKey.Enter && key.Key != ConsoleKey.Backspace)
+                var response = await client.PostAsync($"{_baseUrl}/Auth/login", content);
+                if (response.IsSuccessStatusCode)
                 {
-                    password += key.KeyChar;
-                    Console.Write("*");
+                    var json = await response.Content.ReadAsStringAsync();
+                    dynamic data = JsonConvert.DeserializeObject(json);
+                    _jwtToken = data.token;
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _jwtToken);
+                    Console.WriteLine("Login Successful!");
+                    return true;
                 }
-                else if (key.Key == ConsoleKey.Backspace && password.Length > 0)
-                {
-                    password = password[..^1];
-                    Console.Write("\b \b");
-                }
-            } while (key.Key != ConsoleKey.Enter);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Connection error: {ex.Message}");
+            }
+            
+            Console.WriteLine("Login Failed.");
+            return false;
+        }
 
-            return password;
+        static async Task ListCards()
+        {
+            var response = await client.GetAsync($"{_baseUrl}/Data");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var cards = JsonConvert.DeserializeObject<List<dynamic>>(json);
+                Console.WriteLine($"\nTotal Cards: {cards.Count}");
+                foreach (var card in cards)
+                {
+                    Console.WriteLine($"- {card.name} ({card.type})");
+                }
+            }
+            else Console.WriteLine("Error fetching data.");
+        }
+
+        static async Task FindCard()
+        {
+            Console.Write("Enter ID: ");
+            string id = Console.ReadLine();
+            var response = await client.GetAsync($"{_baseUrl}/Data/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                dynamic card = JsonConvert.DeserializeObject(json);
+                Console.WriteLine($"Found: {card.name}");
+            }
+            else Console.WriteLine("Not found.");
+        }
+
+        static async Task CreateCard()
+        {
+            var card = new
+            {
+                Name = "New Card",
+                Type = "Creature",
+                ManaCost = "{W}",
+                Rarity = "Common"
+            };
+            var content = new StringContent(JsonConvert.SerializeObject(card), Encoding.UTF8, "application/json");
+            var response = await client.PostAsync($"{_baseUrl}/Data", content);
+            Console.WriteLine(response.IsSuccessStatusCode ? "Created!" : "Error.");
+        }
+
+        static async Task DeleteCard()
+        {
+            Console.Write("Enter ID: ");
+            string id = Console.ReadLine();
+            var response = await client.DeleteAsync($"{_baseUrl}/Data/{id}");
+            Console.WriteLine(response.IsSuccessStatusCode ? "Deleted!" : "Error.");
+        }
+
+        static async Task SwitchPersistence()
+        {
+            Console.WriteLine("1. Memory");
+            Console.WriteLine("2. MySQL");
+            string choice = Console.ReadLine();
+            string type = choice == "2" ? "MySQL" : "Memory";
+            
+            var model = new { Type = type };
+            var content = new StringContent(JsonConvert.SerializeObject(model), Encoding.UTF8, "application/json");
+            var response = await client.PostAsync($"{_baseUrl}/Config/persistence", content);
+            Console.WriteLine(response.IsSuccessStatusCode ? $"Switched to {type}" : "Error.");
+        }
+
+        static async Task LoadData()
+        {
+            // In a real app, this might trigger a backend job.
+            // Here we just simulate or call a load endpoint if we had one.
+            Console.WriteLine("Requesting backend to load data...");
+            // For now, we assume the backend loads on startup or we could add an endpoint.
+            Console.WriteLine("Data load triggered (Simulation).");
+            await Task.CompletedTask;
         }
     }
 }

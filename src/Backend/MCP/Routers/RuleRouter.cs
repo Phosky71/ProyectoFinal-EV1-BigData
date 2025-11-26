@@ -1,97 +1,49 @@
-using System;
-using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Backend.Persistence.Interfaces;
+using Backend.API.Models;
 
-namespace ProyectoFinal.Backend.MCP.Routers
+namespace Backend.MCP.Routers
 {
-    /// <summary>
-    /// Router basado en reglas manuales para el protocolo MCP.
-    /// Se ejecuta PRIMERO antes que el LLMRouter.
-    /// Si encuentra una regla que coincide, la ejecuta.
-    /// Si no encuentra ninguna regla, retorna null para que el LLMRouter procese la consulta.
-    /// </summary>
-    public class RuleRouter : IRouter
+    public class RuleRouter : IMCPRouter
     {
-        private readonly Dictionary<string, Func<string, Task<string>>> _rules;
+        private readonly IRepository<Card> _repository;
 
-        public RuleRouter()
+        public RuleRouter(IRepository<Card> repository)
         {
-            _rules = new Dictionary<string, Func<string, Task<string>>>(StringComparer.OrdinalIgnoreCase);
-            InitializeDefaultRules();
+            _repository = repository;
         }
 
-        /// <summary>
-        /// Inicializa las reglas por defecto del router.
-        /// </summary>
-        private void InitializeDefaultRules()
-        {
-            // TODO: Agregar reglas manuales aqui
-            // Ejemplo:
-            // _rules.Add("listar usuarios", async (query) => await ListUsersAsync());
-            // _rules.Add("contar registros", async (query) => await CountRecordsAsync());
-        }
-
-        /// <summary>
-        /// Agrega una nueva regla al router.
-        /// </summary>
-        /// <param name="keyword">Palabra clave que activa la regla</param>
-        /// <param name="handler">Funcion que maneja la regla</param>
-        public void AddRule(string keyword, Func<string, Task<string>> handler)
-        {
-            if (!_rules.ContainsKey(keyword))
-            {
-                _rules.Add(keyword, handler);
-            }
-        }
-
-        /// <summary>
-        /// Intenta enrutar la consulta usando las reglas definidas.
-        /// </summary>
-        /// <param name="query">Consulta en lenguaje natural</param>
-        /// <returns>Resultado si encuentra regla, null si no hay coincidencia</returns>
-        public async Task<string?> TryRouteAsync(string query)
-        {
-            if (string.IsNullOrWhiteSpace(query))
-                return null;
-
-            foreach (var rule in _rules)
-            {
-                if (query.Contains(rule.Key, StringComparison.OrdinalIgnoreCase))
-                {
-                    return await rule.Value(query);
-                }
-            }
-
-            // No se encontro ninguna regla - retornar null para que LLMRouter procese
-            return null;
-        }
-
-        /// <summary>
-        /// Indica si el router puede manejar la consulta.
-        /// </summary>
         public bool CanHandle(string query)
         {
-            if (string.IsNullOrWhiteSpace(query))
-                return false;
+            // Simple rules: "count", "list", "show"
+            return Regex.IsMatch(query, @"\b(count|list|show|find)\b", RegexOptions.IgnoreCase);
+        }
 
-            foreach (var rule in _rules)
+        public async Task<string> ProcessRequestAsync(string query)
+        {
+            var cards = await _repository.GetAllAsync();
+
+            if (Regex.IsMatch(query, @"count", RegexOptions.IgnoreCase))
             {
-                if (query.Contains(rule.Key, StringComparison.OrdinalIgnoreCase))
+                return $"Total cards: {cards.Count()}";
+            }
+            
+            if (Regex.IsMatch(query, @"find|show", RegexOptions.IgnoreCase))
+            {
+                // Extract name
+                var match = Regex.Match(query, @"(find|show)\s+(.*)", RegexOptions.IgnoreCase);
+                if (match.Success)
                 {
-                    return true;
+                    var term = match.Groups[2].Value.Trim();
+                    var found = cards.Where(c => c.Name.Contains(term, System.StringComparison.OrdinalIgnoreCase)).Take(5);
+                    if (!found.Any()) return "No cards found.";
+                    return "Found: " + string.Join(", ", found.Select(c => c.Name));
                 }
             }
 
-            return false;
+            return "I understood the command but couldn't execute specific logic.";
         }
-    }
-
-    /// <summary>
-    /// Interface para los routers MCP.
-    /// </summary>
-    public interface IRouter
-    {
-        Task<string?> TryRouteAsync(string query);
-        bool CanHandle(string query);
     }
 }
