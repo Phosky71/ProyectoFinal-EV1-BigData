@@ -1,132 +1,155 @@
+using Backend.Persistence.Interfaces;
+using Backend.Persistence.Models;
+using CsvHelper;
+using CsvHelper.Configuration;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Formats.Asn1;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Backend.Persistence.Models;
-using Backend.Persistence.Interfaces;
 
 namespace Backend.Persistence.Memory
 {
+    /// <summary>
+    /// Repositorio en memoria usando LINQ (según requisito del enunciado).
+    /// Thread-safe con ConcurrentDictionary.
+    /// </summary>
     public class MemoryRepository : IRepository<Card>
     {
-        private static List<Card> _data = new List<Card>();
+        // ConcurrentDictionary es thread-safe (mejor que List<Card> estático)
+        private static readonly ConcurrentDictionary<string, Card> _data = new();
 
         public async Task<IEnumerable<Card>> GetAllAsync()
         {
-            return await Task.FromResult(_data);
+            // LINQ sobre datos en memoria (requisito del enunciado)
+            return await Task.FromResult(_data.Values.ToList());
         }
 
-        public async Task<Card> GetByIdAsync(string id)
+        public async Task<Card?> GetByIdAsync(string id)
         {
-            return await Task.FromResult(_data.FirstOrDefault(c => c.Id == id));
+            await Task.CompletedTask;
+            _data.TryGetValue(id, out var card);
+            return card;
         }
 
         public async Task AddAsync(Card entity)
         {
-            _data.Add(entity);
+            if (string.IsNullOrWhiteSpace(entity.Id))
+            {
+                entity.Id = Guid.NewGuid().ToString();
+            }
+
+            _data.TryAdd(entity.Id, entity);
             await Task.CompletedTask;
         }
 
         public async Task UpdateAsync(Card entity)
         {
-            var existing = _data.FirstOrDefault(c => c.Id == entity.Id);
-            if (existing != null)
+            if (_data.ContainsKey(entity.Id))
             {
-                _data.Remove(existing);
-                _data.Add(entity);
+                _data[entity.Id] = entity;
             }
             await Task.CompletedTask;
         }
 
         public async Task DeleteAsync(string id)
         {
-            var existing = _data.FirstOrDefault(c => c.Id == id);
-            if (existing != null)
-            {
-                _data.Remove(existing);
-            }
+            _data.TryRemove(id, out _);
             await Task.CompletedTask;
         }
 
-        public async Task LoadDataAsync(string sourcePath)
+        /// <summary>
+        /// Carga datos desde un CSV de Kaggle usando CsvHelper (robusto).
+        /// </summary>
+        public async Task<int> LoadDataAsync(string sourcePath)
         {
-            if (!File.Exists(sourcePath)) return;
+            if (!File.Exists(sourcePath))
+            {
+                throw new FileNotFoundException($"Dataset file not found: {sourcePath}");
+            }
 
             _data.Clear();
-            var lines = await File.ReadAllLinesAsync(sourcePath);
-            // Skip header
-            for (int i = 1; i < lines.Length; i++)
+            int loadedCount = 0;
+
+            try
             {
-                // Simple CSV parsing (naive split for demonstration, robust parsing would require a library)
-                // Assuming the CSV is well-formed and we can just take the first few columns or map them by index
-                // Given the complexity of the CSV shown (multiline strings, etc.), a robust parser is needed.
-                // For this exercise, I will try to parse the critical fields.
-                
-                // NOTE: Real-world CSV parsing should use CsvHelper. 
-                // Here we will just try to read what we can or mock the data loading if the CSV is too complex for simple split.
-                // However, the requirement says "Descarga de un dataset... y carga de datos".
-                
-                try 
+                using var reader = new StreamReader(sourcePath);
+                using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
                 {
-                    var parts = ParseCsvLine(lines[i]);
-                    if (parts.Count > 0)
+                    HasHeaderRecord = true,
+                    MissingFieldFound = null, // Ignorar campos faltantes
+                    BadDataFound = null // Ignorar datos malformados
+                });
+
+                // Mapeo manual de columnas del CSV de MTG de Kaggle
+                var records = csv.GetRecords<dynamic>();
+
+                await Task.Run(() =>
+                {
+                    foreach (var record in records)
                     {
-                        var card = new Card
+                        try
                         {
-                            Name = GetValue(parts, 0),
-                            MultiverseId = GetValue(parts, 1),
-                            ManaCost = GetValue(parts, 4),
-                            Type = GetValue(parts, 8),
-                            Rarity = GetValue(parts, 11),
-                            Text = GetValue(parts, 12),
-                            Power = GetValue(parts, 16),
-                            Toughness = GetValue(parts, 17),
-                            ImageUrl = GetValue(parts, 35),
-                            SetName = GetValue(parts, 37),
-                            Id = GetValue(parts, 38)
-                        };
-                        
-                        // If ID is missing in CSV, generate one
-                        if (string.IsNullOrEmpty(card.Id)) card.Id = Guid.NewGuid().ToString();
-                        
-                        _data.Add(card);
+                            var dict = record as IDictionary<string, object>;
+
+                            var card = new Card
+                            {
+                                Id = GetValue(dict, "id") ?? Guid.NewGuid().ToString(),
+                                Name = GetValue(dict, "name") ?? "Unknown",
+                                ManaCost = GetValue(dict, "manaCost"),
+                                Type = GetValue(dict, "type"),
+                                Rarity = GetValue(dict, "rarity"),
+                                SetName = GetValue(dict, "setName") ?? GetValue(dict, "set"),
+                                Text = GetValue(dict, "text"),
+                                Power = GetValue(dict, "power"),
+                                Toughness = GetValue(dict, "toughness"),
+                                ImageUrl = GetValue(dict, "imageUrl"),
+                                MultiverseId = GetValue(dict, "multiverseid") ?? GetValue(dict, "multiverseId")
+                            };
+
+                            _data.TryAdd(card.Id, card);
+                            loadedCount++;
+                        }
+                        catch
+                        {
+                            // Continuar con la siguiente línea si hay error
+                        }
                     }
-                }
-                catch { /* Continue on error */ }
+                });
+
+                return loadedCount;
             }
-        }
-
-        private string GetValue(List<string> parts, int index)
-        {
-            if (index < parts.Count) return parts[index];
-            return "";
-        }
-
-        private List<string> ParseCsvLine(string line)
-        {
-            var result = new List<string>();
-            bool inQuotes = false;
-            string current = "";
-            for (int i = 0; i < line.Length; i++)
+            catch (Exception ex)
             {
-                char c = line[i];
-                if (c == '\"')
-                {
-                    inQuotes = !inQuotes;
-                }
-                else if (c == ',' && !inQuotes)
-                {
-                    result.Add(current);
-                    current = "";
-                }
-                else
-                {
-                    current += c;
-                }
+                throw new Exception($"Error loading data from Kaggle CSV: {ex.Message}", ex);
             }
-            result.Add(current);
-            return result;
+        }
+
+        public async Task<string> GetPersistenceModeAsync()
+        {
+            return await Task.FromResult("Memory");
+        }
+
+        public async Task ClearAllAsync()
+        {
+            _data.Clear();
+            await Task.CompletedTask;
+        }
+
+        // Helper para extraer valores del diccionario dinámico de CsvHelper
+        private string? GetValue(IDictionary<string, object>? dict, string key)
+        {
+            if (dict == null) return null;
+
+            if (dict.TryGetValue(key, out var value))
+            {
+                return value?.ToString()?.Trim();
+            }
+
+            return null;
         }
     }
 }

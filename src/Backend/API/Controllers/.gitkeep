@@ -1,5 +1,0 @@
-# Placeholder para mantener la carpeta Controllers en Git
-# Aquí irán los controladores de la API REST:
-# - AuthController.cs (autenticación JWT)
-# - DataController.cs (operaciones CRUD)
-# - MCPController.cs (consultas lenguaje natural)

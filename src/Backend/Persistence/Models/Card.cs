@@ -1,19 +1,115 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Persistence.Models
 {
+    /// <summary>
+    /// Modelo que representa una carta de Magic: The Gathering.
+    /// Dataset de Kaggle: Magic: The Gathering Cards
+    /// </summary>
     public class Card
     {
+        /// <summary>
+        /// ID único de la carta (GUID generado automáticamente).
+        /// </summary>
+        [Key]
         public string Id { get; set; } = Guid.NewGuid().ToString();
-        public string Name { get; set; }
-        public string ManaCost { get; set; }
-        public string Type { get; set; }
-        public string Rarity { get; set; }
-        public string SetName { get; set; }
-        public string Text { get; set; }
-        public string Power { get; set; }
-        public string Toughness { get; set; }
-        public string ImageUrl { get; set; }
-        public string MultiverseId { get; set; }
+
+        /// <summary>
+        /// Nombre de la carta (campo requerido).
+        /// </summary>
+        [Required(ErrorMessage = "Card name is required")]
+        [StringLength(200, ErrorMessage = "Name cannot exceed 200 characters")]
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Coste de maná de la carta (ej: "{3}{U}{U}").
+        /// </summary>
+        [StringLength(50)]
+        public string? ManaCost { get; set; }
+
+        /// <summary>
+        /// Tipo de carta (ej: "Creature — Human Wizard", "Instant", "Land").
+        /// </summary>
+        [StringLength(200)]
+        public string? Type { get; set; }
+
+        /// <summary>
+        /// Rareza de la carta (Common, Uncommon, Rare, Mythic Rare).
+        /// </summary>
+        [StringLength(50)]
+        public string? Rarity { get; set; }
+
+        /// <summary>
+        /// Nombre del set/expansión a la que pertenece.
+        /// </summary>
+        [StringLength(200)]
+        public string? SetName { get; set; }
+
+        /// <summary>
+        /// Texto de reglas de la carta.
+        /// </summary>
+        [StringLength(1000)]
+        public string? Text { get; set; }
+
+        /// <summary>
+        /// Poder de la criatura (solo para criaturas).
+        /// </summary>
+        [StringLength(10)]
+        public string? Power { get; set; }
+
+        /// <summary>
+        /// Resistencia de la criatura (solo para criaturas).
+        /// </summary>
+        [StringLength(10)]
+        public string? Toughness { get; set; }
+
+        /// <summary>
+        /// URL de la imagen de la carta.
+        /// </summary>
+        [Url(ErrorMessage = "Invalid URL format")]
+        [StringLength(500)]
+        public string? ImageUrl { get; set; }
+
+        /// <summary>
+        /// ID de Multiverse de Gatherer (identificador oficial de Wizards).
+        /// </summary>
+        [StringLength(50)]
+        public string? MultiverseId { get; set; }
+
+        /// <summary>
+        /// Fecha de creación del registro.
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// Fecha de última actualización.
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// Valida si la carta es una criatura.
+        /// </summary>
+        public bool IsCreature()
+        {
+            return Type?.Contains("Creature", StringComparison.OrdinalIgnoreCase) ?? false;
+        }
+
+        /// <summary>
+        /// Obtiene el color/colores de la carta basándose en el coste de maná.
+        /// </summary>
+        public string GetColors()
+        {
+            if (string.IsNullOrEmpty(ManaCost)) return "Colorless";
+
+            var colors = new List<string>();
+            if (ManaCost.Contains("{W}")) colors.Add("White");
+            if (ManaCost.Contains("{U}")) colors.Add("Blue");
+            if (ManaCost.Contains("{B}")) colors.Add("Black");
+            if (ManaCost.Contains("{R}")) colors.Add("Red");
+            if (ManaCost.Contains("{G}")) colors.Add("Green");
+
+            return colors.Count == 0 ? "Colorless" : string.Join(", ", colors);
+        }
     }
 }

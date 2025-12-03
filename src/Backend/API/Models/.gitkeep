@@ -1,5 +1,0 @@
-# Carpeta Models - Entidades del proyecto
-# Aquí irán las clases de entidad basadas en el dataset de Kaggle:
-# - DataEntity.cs (entidad principal del dataset)
-# - User.cs (para autenticación JWT)
-# - DTOs/ (Data Transfer Objects)
