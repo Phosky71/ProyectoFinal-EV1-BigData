@@ -2,7 +2,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Backend.Persistence.Interfaces;
-using Backend.API.Models;
+using Backend.Persistence.Models;
 
 namespace Backend.MCP.Routers
 {

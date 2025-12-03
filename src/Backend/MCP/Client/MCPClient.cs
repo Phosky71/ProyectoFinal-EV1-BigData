@@ -1,8 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using ProyectoFinal.Backend.MCP.Routers;
+using Backend.MCP.Routers;
+using Backend.MCP.Server;
+using Backend.Persistence.Interfaces;
+using Backend.Persistence.Models;
 
-namespace ProyectoFinal.Backend.MCP.Client
+namespace Backend.MCP.Client
 {
     /// <summary>
     /// Cliente MCP que coordina las consultas entre los diferentes routers.
@@ -14,11 +17,11 @@ namespace ProyectoFinal.Backend.MCP.Client
         private readonly LLMRouter _llmRouter;
         private readonly MCPServer _server;
 
-        public MCPClient(string llmEndpoint, string llmApiKey, string llmModel = "gpt-3.5-turbo")
+        public MCPClient(IRepository<Card> repository)
         {
-            _ruleRouter = new RuleRouter();
-            _llmRouter = new LLMRouter(llmEndpoint, llmApiKey, llmModel);
-            _server = new MCPServer();
+            _ruleRouter = new RuleRouter(repository);
+            _llmRouter = new LLMRouter(); // LLMRouter uses config internally
+            _server = new MCPServer(repository);
         }
 
         /// <summary>
@@ -37,32 +40,22 @@ namespace ProyectoFinal.Backend.MCP.Client
             try
             {
                 // Paso 1: Intentar con RuleRouter (reglas manuales)
-                var ruleResult = await _ruleRouter.TryRouteAsync(query);
-                
-                if (ruleResult != null)
+                // RuleRouter.CanHandle checks if it matches regex
+                if (_ruleRouter.CanHandle(query))
                 {
                     LogQuery(query, "RuleRouter", true);
-                    return ruleResult;
+                    return await _ruleRouter.ProcessRequestAsync(query);
                 }
 
                 // Paso 2: Fallback a LLMRouter
                 LogQuery(query, "LLMRouter", false);
-                var llmResult = await _llmRouter.TryRouteAsync(query);
-                
-                return llmResult ?? "No se pudo procesar la consulta.";
+                // LLMRouter handles everything
+                return await _llmRouter.ProcessRequestAsync(query);
             }
             catch (Exception ex)
             {
                 return $"Error al procesar la consulta: {ex.Message}";
             }
-        }
-
-        /// <summary>
-        /// Agrega una regla personalizada al RuleRouter.
-        /// </summary>
-        public void AddCustomRule(string keyword, Func<string, Task<string>> handler)
-        {
-            _ruleRouter.AddRule(keyword, handler);
         }
 
         /// <summary>

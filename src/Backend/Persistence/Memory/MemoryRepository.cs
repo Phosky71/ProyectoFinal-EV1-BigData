@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Backend.API.Models;
+using Backend.Persistence.Models;
 using Backend.Persistence.Interfaces;
 
 namespace Backend.Persistence.Memory

@@ -26,9 +26,9 @@ namespace Backend.API.Controllers
 
         private string GenerateJwtToken(string username)
         {
-            var secretKey = ConfigurationManager.AppSettings["JwtSecret"];
-            var issuer = ConfigurationManager.AppSettings["JwtIssuer"];
-            var audience = ConfigurationManager.AppSettings["JwtAudience"];
+            var secretKey = System.Configuration.ConfigurationManager.AppSettings["JwtSecret"];
+            var issuer = System.Configuration.ConfigurationManager.AppSettings["JwtIssuer"];
+            var audience = System.Configuration.ConfigurationManager.AppSettings["JwtAudience"];
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 

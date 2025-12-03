@@ -1,5 +1,5 @@
 using System.Configuration;
-using Backend.API.Models;
+using Backend.Persistence.Models;
 using Backend.Persistence.Interfaces;
 using Backend.Persistence.Memory;
 using Backend.Persistence.MySQL;

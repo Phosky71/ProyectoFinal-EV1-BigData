@@ -15,7 +15,7 @@ namespace Backend.API.Controllers
             // For this assignment, we update the in-memory config or the file.
             // We'll update the ConfigurationManager (which might not persist to file but affects runtime).
             
-            ConfigurationManager.AppSettings["PersistenceType"] = model.Type;
+            System.Configuration.ConfigurationManager.AppSettings["PersistenceType"] = model.Type;
             return Ok(new { message = $"Persistence switched to {model.Type}" });
         }
     }

@@ -1,6 +1,6 @@
 using System;
 
-namespace Backend.API.Models
+namespace Backend.Persistence.Models
 {
     public class Card
     {

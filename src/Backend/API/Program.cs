@@ -4,7 +4,7 @@ using System.Text;
 using System.Configuration;
 using Backend.Persistence;
 using Backend.Persistence.Interfaces;
-using Backend.API.Models;
+using Backend.Persistence.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,9 +14,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Configure JWT Authentication
-var secretKey = ConfigurationManager.AppSettings["JwtSecret"] ?? "THIS_IS_A_VERY_LONG_SECRET_KEY_FOR_JWT_AUTHENTICATION_TESTING_PURPOSES_ONLY";
-var issuer = ConfigurationManager.AppSettings["JwtIssuer"] ?? "ProyectoFinalEV1";
-var audience = ConfigurationManager.AppSettings["JwtAudience"] ?? "ProyectoFinalEV1Users";
+var secretKey = System.Configuration.ConfigurationManager.AppSettings["JwtSecret"] ?? "THIS_IS_A_VERY_LONG_SECRET_KEY_FOR_JWT_AUTHENTICATION_TESTING_PURPOSES_ONLY";
+var issuer = System.Configuration.ConfigurationManager.AppSettings["JwtIssuer"] ?? "ProyectoFinalEV1";
+var audience = System.Configuration.ConfigurationManager.AppSettings["JwtAudience"] ?? "ProyectoFinalEV1Users";
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

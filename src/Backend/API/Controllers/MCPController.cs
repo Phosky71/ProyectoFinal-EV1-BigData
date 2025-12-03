@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using Backend.API.Models;
+using Backend.Persistence.Models;
 using Backend.MCP.Server;
 using Backend.Persistence.Interfaces;
 using Microsoft.AspNetCore.Authorization;
