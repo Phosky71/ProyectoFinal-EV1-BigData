@@ -1,6 +1,3 @@
-using System;
-using System.Threading.Tasks;
-using Backend.MCP.Routers;
 using Backend.MCP.Server;
 using Backend.Persistence.Interfaces;
 using Backend.Persistence.Models;
@@ -20,7 +17,7 @@ namespace Backend.MCP.Client
         public MCPClient(IRepository<Card> repository)
         {
             _ruleRouter = new RuleRouter(repository);
-            _llmRouter = new LLMRouter(); // LLMRouter uses config internally
+            _llmRouter = new LLMRouter();
             _server = new MCPServer(repository);
         }
 

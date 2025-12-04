@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using System.Threading.Tasks;
+using ProyectoFinal.Backend.API.Services;
 
 namespace ProyectoFinal.Backend.API.Controllers
 {

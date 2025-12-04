@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using Backend.Persistence.Models;
 using Backend.Persistence.Interfaces;
 using MySql.Data.MySqlClient;
