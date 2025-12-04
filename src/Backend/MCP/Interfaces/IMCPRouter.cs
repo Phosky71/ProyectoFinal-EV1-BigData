@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace Backend.MCP.Interfaces
 {
     /// <summary>
