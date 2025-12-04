@@ -1,44 +1,23 @@
-﻿using System;
 using System.Threading.Tasks;
-using Backend.Persistence.Interfaces;
-using Backend.Persistence.Models;
 
-namespace Backend.Persistence
+namespace Backend.Persistence.Interfaces
 {
-    public class KaggleDataLoader : IKaggleDataLoader
+    /// <summary>
+    /// Servicio que carga los datos del dataset de Kaggle al sistema de persistencia.
+    /// </summary>
+    public interface IKaggleDataLoader
     {
-        private readonly IRepository<Card> _repository;
-        private readonly string _datasetPath;
+        Task<KaggleLoadResult> LoadDataAsync();
+    }
 
-        public KaggleDataLoader(IRepository<Card> repository, string datasetPath)
-        {
-            _repository = repository;
-            _datasetPath = datasetPath;
-        }
-
-        public async Task<KaggleLoadResult> LoadDataAsync()
-        {
-            try
-            {
-                var recordsLoaded = await _repository.LoadDataAsync(_datasetPath);
-                var persistenceMode = await _repository.GetPersistenceModeAsync();
-
-                return new KaggleLoadResult
-                {
-                    Success = true,
-                    RecordsLoaded = recordsLoaded,
-                    PersistenceMode = persistenceMode
-                };
-            }
-            catch (Exception ex)
-            {
-                return new KaggleLoadResult
-                {
-                    Success = false,
-                    RecordsLoaded = 0,
-                    ErrorMessage = ex.Message
-                };
-            }
-        }
+    /// <summary>
+    /// Resultado de la operación de carga de datos.
+    /// </summary>
+    public class KaggleLoadResult
+    {
+        public bool Success { get; set; }
+        public int RecordsLoaded { get; set; }
+        public string PersistenceMode { get; set; } = string.Empty;
+        public string? ErrorMessage { get; set; }
     }
 }
