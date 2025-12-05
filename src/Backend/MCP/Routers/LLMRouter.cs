@@ -1,74 +1,96 @@
-using Backend.MCP.Interfaces;
-using Backend.Persistence.Interfaces;
-using Backend.Persistence.Models;
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Backend.MCP.Interfaces;
+using Backend.Persistence.Interfaces;
+using Backend.Persistence.Models;
 
 namespace Backend.MCP.Routers
 {
     /// <summary>
-    /// Enrutador que usa un LLM (OpenAI GPT) para consultas complejas.
-    /// Se ejecuta SOLO si RuleRouter no encuentra una regla.
+    /// Enrutador que usa Google Gemini para consultas complejas.
+    /// Se ejecuta SOLO si RuleRouter no encuentra una regla (segundo enrutador según enunciado).
     /// </summary>
     public class LLMRouter : ILLMRouter
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly string? _apiKey;
+        private const string GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
-        public LLMRouter(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public LLMRouter(IHttpClientFactory httpClientFactory, string? apiKey)
         {
-            _httpClientFactory = httpClientFactory;
-            _apiKey = configuration["OpenAI:ApiKey"];
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+            _apiKey = apiKey;
         }
 
         /// <summary>
-        /// Procesa una consulta usando OpenAI GPT.
+        /// Procesa una consulta usando Google Gemini.
+        /// Genera respuestas en lenguaje natural basándose en el contexto de las cartas.
         /// </summary>
         public async Task<RouterResult> ProcessAsync(string query, IRepository<Card> repository)
         {
-            // Verificar si la API key está configurada
-            if (string.IsNullOrEmpty(_apiKey) || _apiKey == "YOUR_OPENAI_API_KEY_HERE")
+            if (string.IsNullOrWhiteSpace(query))
             {
                 return new RouterResult
                 {
+                    Success = false,
+                    Response = "La consulta está vacía"
+                };
+            }
+
+            // Verificar si la API key está configurada
+            if (string.IsNullOrEmpty(_apiKey) || _apiKey == "YOUR_GEMINI_API_KEY_HERE")
+            {
+                Console.WriteLine("[LLMRouter] Google Gemini API key not configured, using fallback");
+
+                return new RouterResult
+                {
                     Success = true,
-                    Response = "LLM no configurado. Usa el RuleRouter con comandos como 'count cards', 'find [nombre]', etc.",
+                    Response = $"Entiendo que preguntas: '{query}'. Sin embargo, el LLM no está configurado. " +
+                              "Para obtener respuestas inteligentes, configura una API key de Google Gemini en appsettings.json. " +
+                              "Mientras tanto, intenta usar comandos específicos como: 'cuántas cartas hay', 'busca [nombre]', 'cartas azules', etc.",
                     Data = null
                 };
             }
 
             try
             {
+                Console.WriteLine($"[LLMRouter] Calling Google Gemini API for query: '{query}'");
+
                 // Obtener contexto de la base de datos
                 var cards = await repository.GetAllAsync();
-                var context = BuildContext(cards);
+                var cardsList = cards.ToList();
+                var context = BuildContext(cardsList);
 
-                // Llamar a OpenAI
-                var llmResponse = await CallOpenAIAsync(query, context);
+                // Llamar a Google Gemini
+                var llmResponse = await CallGeminiAsync(query, context);
 
                 // Intentar extraer cartas relevantes basándose en la respuesta
-                var relevantCards = ExtractRelevantCards(llmResponse, cards);
+                var relevantCards = ExtractRelevantCards(llmResponse, cardsList);
+
+                Console.WriteLine($"[LLMRouter] Gemini response: {llmResponse}");
+                Console.WriteLine($"[LLMRouter] Found {relevantCards.Count} relevant cards");
 
                 return new RouterResult
                 {
                     Success = true,
                     Response = llmResponse,
-                    Data = relevantCards
+                    Data = relevantCards.Any() ? relevantCards : null
                 };
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[LLMRouter] Error: {ex.Message}");
+
                 return new RouterResult
                 {
                     Success = true,
-                    Response = $"Error en LLM: {ex.Message}. Intenta con comandos como 'count cards' o 'find [nombre]'.",
+                    Response = $"Ocurrió un error al consultar la IA: {ex.Message}. " +
+                              "Intenta con comandos más específicos como: 'count cards', 'find [nombre]', 'blue cards'.",
                     Data = null
                 };
             }
@@ -76,75 +98,139 @@ namespace Backend.MCP.Routers
 
         // ==================== MÉTODOS PRIVADOS ====================
 
-        private async Task<string> CallOpenAIAsync(string query, string context)
+        /// <summary>
+        /// Llama a la API de Google Gemini.
+        /// </summary>
+        private async Task<string> CallGeminiAsync(string query, string context)
         {
             var httpClient = _httpClientFactory.CreateClient();
-            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {_apiKey}");
+
+            var systemPrompt = "Eres un asistente experto en Magic: The Gathering. " +
+                              "Responde preguntas sobre cartas basándote en el contexto proporcionado. " +
+                              "Sé conciso y directo. Si mencionas cartas específicas, usa sus nombres exactos. " +
+                              "Si no puedes responder con certeza, sugiere usar comandos específicos.";
+
+            var fullPrompt = $"{systemPrompt}\n\n" +
+                           $"Contexto de la base de datos:\n{context}\n\n" +
+                           $"Pregunta del usuario: {query}\n\n" +
+                           $"Respuesta:";
 
             var requestBody = new
             {
-                model = "gpt-3.5-turbo",
-                messages = new[]
+                contents = new[]
                 {
                     new
                     {
-                        role = "system",
-                        content = "Eres un asistente experto en Magic: The Gathering. Responde preguntas sobre cartas basándote en el contexto proporcionado. " +
-                                 "Si la pregunta no se puede responder con el contexto, sugiere usar comandos como 'count cards', 'find [nombre]', 'blue cards', etc."
-                    },
-                    new
-                    {
-                        role = "user",
-                        content = $"Contexto de la base de datos:\n{context}\n\nPregunta: {query}"
+                        parts = new[]
+                        {
+                            new { text = fullPrompt }
+                        }
                     }
                 },
-                max_tokens = 150,
-                temperature = 0.7
+                generationConfig = new
+                {
+                    temperature = 0.7,
+                    maxOutputTokens = 500,
+                    topP = 0.95,
+                    topK = 40
+                }
             };
 
             var json = JsonSerializer.Serialize(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content);
+            var url = $"{GEMINI_API_URL}?key={_apiKey}";
+            var response = await httpClient.PostAsync(url, content);
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new Exception($"OpenAI API error: {response.StatusCode}");
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Google Gemini API error ({response.StatusCode}): {errorContent}");
             }
 
             var responseString = await response.Content.ReadAsStringAsync();
             var responseObj = JsonSerializer.Deserialize<JsonElement>(responseString);
 
-            return responseObj.GetProperty("choices")[0]
-                             .GetProperty("message")
-                             .GetProperty("content")
-                             .GetString() ?? "No response from LLM";
+            // Parsear la respuesta de Gemini
+            var candidates = responseObj.GetProperty("candidates");
+            if (candidates.GetArrayLength() == 0)
+            {
+                return "No se obtuvo respuesta de Gemini";
+            }
+
+            var text = candidates[0]
+                .GetProperty("content")
+                .GetProperty("parts")[0]
+                .GetProperty("text")
+                .GetString();
+
+            return text ?? "No se obtuvo respuesta del LLM";
         }
 
-        private string BuildContext(IEnumerable<Card> cards)
+        /// <summary>
+        /// Construye un contexto resumido de las cartas para el LLM.
+        /// </summary>
+        private string BuildContext(List<Card> cards)
         {
-            var cardsList = cards.Take(20).ToList(); // Limitar contexto
-
-            if (!cardsList.Any())
+            if (!cards.Any())
             {
-                return "Base de datos vacía.";
+                return "La base de datos está vacía.";
             }
 
             var sb = new StringBuilder();
-            sb.AppendLine($"Total de cartas: {cards.Count()}");
-            sb.AppendLine($"Ejemplo de cartas:");
+            sb.AppendLine($"Total de cartas: {cards.Count}");
 
-            foreach (var card in cardsList.Take(5))
+            // Estadísticas por rareza
+            var byRarity = cards.Where(c => !string.IsNullOrEmpty(c.Rarity))
+                .GroupBy(c => c.Rarity)
+                .Select(g => $"{g.Key}: {g.Count()}")
+                .ToList();
+
+            if (byRarity.Any())
             {
-                sb.AppendLine($"- {card.Name} ({card.Type}, {card.Rarity})");
+                sb.AppendLine($"Distribución por rareza: {string.Join(", ", byRarity)}");
+            }
+
+            // Colores disponibles
+            var colors = cards.Where(c => !string.IsNullOrEmpty(c.ManaCost))
+                .Select(c => c.GetColors())
+                .Distinct()
+                .Take(5)
+                .ToList();
+
+            if (colors.Any())
+            {
+                sb.AppendLine($"Colores: {string.Join(", ", colors)}");
+            }
+
+            // Sets principales
+            var sets = cards.Where(c => !string.IsNullOrEmpty(c.SetName))
+                .GroupBy(c => c.SetName)
+                .OrderByDescending(g => g.Count())
+                .Take(5)
+                .Select(g => $"{g.Key} ({g.Count()})")
+                .ToList();
+
+            if (sets.Any())
+            {
+                sb.AppendLine($"Sets: {string.Join(", ", sets)}");
+            }
+
+            // Ejemplos de cartas
+            sb.AppendLine("\nEjemplos:");
+            foreach (var card in cards.Take(10))
+            {
+                sb.AppendLine($"- {card.Name} ({card.Type ?? "Unknown"}, {card.Rarity ?? "Unknown"})");
             }
 
             return sb.ToString();
         }
 
-        private List<Card> ExtractRelevantCards(string llmResponse, IEnumerable<Card> allCards)
+        /// <summary>
+        /// Extrae cartas relevantes mencionadas en la respuesta del LLM.
+        /// </summary>
+        private List<Card> ExtractRelevantCards(string llmResponse, List<Card> allCards)
         {
-            // Buscar nombres de cartas mencionados en la respuesta del LLM
             var relevantCards = new List<Card>();
 
             foreach (var card in allCards)
@@ -153,8 +239,7 @@ namespace Backend.MCP.Routers
                     llmResponse.Contains(card.Name, StringComparison.OrdinalIgnoreCase))
                 {
                     relevantCards.Add(card);
-
-                    if (relevantCards.Count >= 5) break;
+                    if (relevantCards.Count >= 10) break;
                 }
             }
 

@@ -7,7 +7,25 @@ namespace Backend.Persistence.Interfaces
     /// </summary>
     public interface IKaggleDataLoader
     {
+        /// <summary>
+        /// Carga datos al sistema de persistencia activo.
+        /// </summary>
         Task<KaggleLoadResult> LoadDataAsync();
+
+        /// <summary>
+        /// Carga datos específicamente a Memory.
+        /// </summary>
+        Task<KaggleLoadResult> LoadToMemoryAsync();
+
+        /// <summary>
+        /// Carga datos específicamente a MySQL.
+        /// </summary>
+        Task<KaggleLoadResult> LoadToMySQLAsync();
+
+        /// <summary>
+        /// Carga datos a ambos sistemas de persistencia.
+        /// </summary>
+        Task<(KaggleLoadResult Memory, KaggleLoadResult MySQL)> LoadToBothAsync();
     }
 
     /// <summary>

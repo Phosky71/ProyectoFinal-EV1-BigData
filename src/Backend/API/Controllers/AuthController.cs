@@ -1,22 +1,43 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ProyectoFinal.Backend.API.Auth;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProyectoFinal.Backend.API.Controllers
 {
+    /// <summary>
+    /// Controlador de autenticación JWT.
+    /// Implementa login, registro y validación de tokens.
+    /// NOTA: Usuarios hardcodeados para simplificar el proyecto (sin base de datos de usuarios).
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
     {
         private readonly JwtService _jwtService;
 
+        // Usuarios hardcodeados (en producción esto estaría en base de datos)
+        private static readonly Dictionary<string, UserCredentials> _users = new()
+        {
+            { "admin", new UserCredentials { Id = "1", Username = "admin", Password = "admin123", Role = "Admin" } },
+            { "user", new UserCredentials { Id = "2", Username = "user", Password = "user123", Role = "User" } },
+            { "test", new UserCredentials { Id = "3", Username = "test", Password = "test123", Role = "User" } }
+        };
+
         public AuthController(JwtService jwtService)
         {
-            _jwtService = jwtService;
+            _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));
         }
 
+        /// <summary>
+        /// Autentica un usuario y devuelve un token JWT.
+        /// POST /api/auth/login
+        /// </summary>
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public IActionResult Login([FromBody] LoginRequest request)
         {
             if (request == null)
             {
@@ -35,24 +56,23 @@ namespace ProyectoFinal.Backend.API.Controllers
 
             try
             {
-                var isValid = await ValidateCredentialsAsync(request.Username, request.Password);
-
-                if (!isValid)
+                // Validar credenciales
+                if (!_users.TryGetValue(request.Username.ToLower(), out var user) ||
+                    user.Password != request.Password)
                 {
                     return Unauthorized(new { error = "Invalid username or password" });
                 }
 
-                var userId = GetUserIdByUsername(request.Username);
-                var role = GetUserRole(request.Username);
+                // Generar token JWT
+                var token = _jwtService.GenerateToken(user.Id, user.Username, user.Role);
 
-                var token = _jwtService.GenerateToken(userId, request.Username, role);
-
-                return Ok(new
+                return Ok(new LoginResponse
                 {
-                    token = token,
-                    username = request.Username,
-                    role = role,
-                    expiresIn = 3600
+                    Token = token,
+                    Username = user.Username,
+                    UserId = user.Id,
+                    Role = user.Role,
+                    ExpiresIn = 3600 // 1 hora
                 });
             }
             catch (Exception ex)
@@ -61,8 +81,15 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Registra un nuevo usuario (simulado).
+        /// POST /api/auth/register
+        /// </summary>
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        [ProducesResponseType(typeof(RegisterResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public IActionResult Register([FromBody] RegisterRequest request)
         {
             if (request == null)
             {
@@ -81,19 +108,33 @@ namespace ProyectoFinal.Backend.API.Controllers
 
             try
             {
-                if (await UserExistsAsync(request.Username))
+                // Verificar si el usuario ya existe
+                if (_users.ContainsKey(request.Username.ToLower()))
                 {
                     return Conflict(new { error = "Username already exists" });
                 }
 
+                // Crear nuevo usuario
                 var userId = Guid.NewGuid().ToString();
+                var newUser = new UserCredentials
+                {
+                    Id = userId,
+                    Username = request.Username,
+                    Password = request.Password, // En producción: hashear la contraseña
+                    Role = "User"
+                };
+
+                _users[request.Username.ToLower()] = newUser;
+
+                // Generar token JWT
                 var token = _jwtService.GenerateToken(userId, request.Username, "User");
 
-                return Ok(new
+                return Ok(new RegisterResponse
                 {
-                    message = "User registered successfully",
-                    token = token,
-                    username = request.Username
+                    Message = "User registered successfully",
+                    Token = token,
+                    Username = request.Username,
+                    UserId = userId
                 });
             }
             catch (Exception ex)
@@ -102,7 +143,14 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Valida un token JWT.
+        /// POST /api/auth/validate
+        /// </summary>
         [HttpPost("validate")]
+        [ProducesResponseType(typeof(ValidateTokenResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult ValidateToken([FromBody] ValidateTokenRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.Token))
@@ -123,12 +171,12 @@ namespace ProyectoFinal.Backend.API.Controllers
                 var username = _jwtService.GetUsernameFromToken(request.Token);
                 var role = _jwtService.GetRoleFromToken(request.Token);
 
-                return Ok(new
+                return Ok(new ValidateTokenResponse
                 {
-                    valid = true,
-                    userId = userId,
-                    username = username,
-                    role = role
+                    Valid = true,
+                    UserId = userId ?? string.Empty,
+                    Username = username ?? string.Empty,
+                    Role = role ?? "User"
                 });
             }
             catch (Exception ex)
@@ -137,61 +185,111 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        private async Task<bool> ValidateCredentialsAsync(string username, string password)
+        /// <summary>
+        /// Obtiene información del usuario autenticado (requiere JWT).
+        /// GET /api/auth/me
+        /// </summary>
+        [Authorize]
+        [HttpGet("me")]
+        [ProducesResponseType(typeof(UserInfoResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public IActionResult GetCurrentUser()
         {
-            await Task.Delay(100);
-
-            var validUsers = new Dictionary<string, string>
+            try
             {
-                { "admin", "admin123" },
-                { "user", "user123" },
-                { "test", "test123" }
-            };
+                var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
 
-            return validUsers.TryGetValue(username, out var validPassword) &&
-                   validPassword == password;
-        }
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    return Unauthorized(new { error = "No token provided" });
+                }
 
-        private string GetUserIdByUsername(string username)
-        {
-            var userIds = new Dictionary<string, string>
+                var userId = _jwtService.GetUserIdFromToken(token);
+                var username = _jwtService.GetUsernameFromToken(token);
+                var role = _jwtService.GetRoleFromToken(token);
+
+                return Ok(new UserInfoResponse
+                {
+                    UserId = userId ?? string.Empty,
+                    Username = username ?? string.Empty,
+                    Role = role ?? "User"
+                });
+            }
+            catch (Exception ex)
             {
-                { "admin", "1" },
-                { "user", "2" },
-                { "test", "3" }
-            };
-
-            return userIds.TryGetValue(username, out var id) ? id : Guid.NewGuid().ToString();
-        }
-
-        private string GetUserRole(string username)
-        {
-            return username.ToLower() == "admin" ? "Admin" : "User";
-        }
-
-        private async Task<bool> UserExistsAsync(string username)
-        {
-            await Task.Delay(50);
-            var existingUsers = new[] { "admin", "user", "test" };
-            return existingUsers.Contains(username.ToLower());
+                return StatusCode(500, new { error = $"Failed to get user info: {ex.Message}" });
+            }
         }
     }
 
+    // ==================== MODELOS ====================
+
     public class LoginRequest
     {
+        [Required]
         public string Username { get; set; } = string.Empty;
+
+        [Required]
         public string Password { get; set; } = string.Empty;
+    }
+
+    public class LoginResponse
+    {
+        public string Token { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public int ExpiresIn { get; set; }
     }
 
     public class RegisterRequest
     {
+        [Required]
+        [MinLength(3)]
         public string Username { get; set; } = string.Empty;
+
+        [Required]
+        [MinLength(6)]
         public string Password { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
+
+        [EmailAddress]
+        public string? Email { get; set; }
+    }
+
+    public class RegisterResponse
+    {
+        public string Message { get; set; } = string.Empty;
+        public string Token { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string UserId { get; set; } = string.Empty;
     }
 
     public class ValidateTokenRequest
     {
+        [Required]
         public string Token { get; set; } = string.Empty;
+    }
+
+    public class ValidateTokenResponse
+    {
+        public bool Valid { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+    }
+
+    public class UserInfoResponse
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+    }
+
+    internal class UserCredentials
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
     }
 }
