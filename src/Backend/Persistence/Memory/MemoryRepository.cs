@@ -2,14 +2,8 @@ using Backend.Persistence.Interfaces;
 using Backend.Persistence.Models;
 using CsvHelper;
 using CsvHelper.Configuration;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Formats.Asn1;
 using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Backend.Persistence.Memory
 {
@@ -25,7 +19,7 @@ namespace Backend.Persistence.Memory
         public async Task<IEnumerable<Card>> GetAllAsync()
         {
             // LINQ sobre datos en memoria (requisito del enunciado)
-            return await Task.FromResult(_data.Values.ToList());
+            return await Task.FromResult(_data.Values.OrderBy(c => c.Name).ToList());
         }
 
         public async Task<Card?> GetByIdAsync(string id)
@@ -42,6 +36,7 @@ namespace Backend.Persistence.Memory
                 entity.Id = Guid.NewGuid().ToString();
             }
 
+            entity.CreatedAt = DateTime.UtcNow;
             _data.TryAdd(entity.Id, entity);
             await Task.CompletedTask;
         }
@@ -50,19 +45,27 @@ namespace Backend.Persistence.Memory
         {
             if (_data.ContainsKey(entity.Id))
             {
+                entity.UpdatedAt = DateTime.UtcNow;
                 _data[entity.Id] = entity;
+            }
+            else
+            {
+                throw new KeyNotFoundException($"Card with ID '{entity.Id}' not found");
             }
             await Task.CompletedTask;
         }
 
         public async Task DeleteAsync(string id)
         {
-            _data.TryRemove(id, out _);
+            if (!_data.TryRemove(id, out _))
+            {
+                throw new KeyNotFoundException($"Card with ID '{id}' not found");
+            }
             await Task.CompletedTask;
         }
 
         /// <summary>
-        /// Carga datos desde un CSV de Kaggle usando CsvHelper (robusto).
+        /// Carga datos desde un CSV de Kaggle usando CsvHelper - Mapeo directo a Card.
         /// </summary>
         public async Task<int> LoadDataAsync(string sourcePath)
         {
@@ -81,45 +84,43 @@ namespace Backend.Persistence.Memory
                 {
                     HasHeaderRecord = true,
                     MissingFieldFound = null, // Ignorar campos faltantes
-                    BadDataFound = null // Ignorar datos malformados
+                    BadDataFound = null, // Ignorar datos malformados
+                    TrimOptions = TrimOptions.Trim
                 });
 
-                // Mapeo manual de columnas del CSV de MTG de Kaggle
-                var records = csv.GetRecords<dynamic>();
+                // Mapeo directo a Card usando los atributos [Name]
+                var cards = csv.GetRecords<Card>();
 
                 await Task.Run(() =>
                 {
-                    foreach (var record in records)
+                    foreach (var card in cards)
                     {
                         try
                         {
-                            var dict = record as IDictionary<string, object>;
-
-                            var card = new Card
+                            // Generar ID si no existe o está vacío
+                            if (string.IsNullOrWhiteSpace(card.Id))
                             {
-                                Id = GetValue(dict, "id") ?? Guid.NewGuid().ToString(),
-                                Name = GetValue(dict, "name") ?? "Unknown",
-                                ManaCost = GetValue(dict, "manaCost"),
-                                Type = GetValue(dict, "type"),
-                                Rarity = GetValue(dict, "rarity"),
-                                SetName = GetValue(dict, "setName") ?? GetValue(dict, "set"),
-                                Text = GetValue(dict, "text"),
-                                Power = GetValue(dict, "power"),
-                                Toughness = GetValue(dict, "toughness"),
-                                ImageUrl = GetValue(dict, "imageUrl"),
-                                MultiverseId = GetValue(dict, "multiverseid") ?? GetValue(dict, "multiverseId")
-                            };
+                                card.Id = Guid.NewGuid().ToString();
+                            }
 
+                            // Asegurar que Name no sea nulo
+                            if (string.IsNullOrWhiteSpace(card.Name))
+                            {
+                                card.Name = "Unknown";
+                            }
+
+                            card.CreatedAt = DateTime.UtcNow;
                             _data.TryAdd(card.Id, card);
                             loadedCount++;
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            // Continuar con la siguiente línea si hay error
+                            Console.WriteLine($" Error loading card: {ex.Message}");
                         }
                     }
                 });
 
+                Console.WriteLine($" Loaded {loadedCount} cards into Memory");
                 return loadedCount;
             }
             catch (Exception ex)
@@ -136,20 +137,27 @@ namespace Backend.Persistence.Memory
         public async Task ClearAllAsync()
         {
             _data.Clear();
+            Console.WriteLine(" Memory cleared");
             await Task.CompletedTask;
         }
 
-        // Helper para extraer valores del diccionario dinámico de CsvHelper
-        private string? GetValue(IDictionary<string, object>? dict, string key)
+        /// <summary>
+        /// Método adicional: búsqueda con LINQ (ejemplo de uso de LINQ en memoria).
+        /// </summary>
+        public async Task<IEnumerable<Card>> SearchAsync(string query)
         {
-            if (dict == null) return null;
+            var lowerQuery = query.ToLower();
 
-            if (dict.TryGetValue(key, out var value))
-            {
-                return value?.ToString()?.Trim();
-            }
+            // Ejemplo de LINQ sobre datos en memoria
+            var results = _data.Values
+                .Where(c =>
+                    c.Name.ToLower().Contains(lowerQuery) ||
+                    (c.Type?.ToLower().Contains(lowerQuery) ?? false) ||
+                    (c.Text?.ToLower().Contains(lowerQuery) ?? false))
+                .OrderBy(c => c.Name)
+                .ToList();
 
-            return null;
+            return await Task.FromResult(results);
         }
     }
 }

@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading.Tasks;
 using Backend.MCP.Interfaces;
-using Backend.MCP.Routers;
 using Backend.Persistence.Interfaces;
 using Backend.Persistence.Models;
 
@@ -12,6 +10,7 @@ namespace Backend.MCP
 {
     /// <summary>
     /// Implementación del servicio MCP que coordina RuleRouter y LLMRouter.
+    /// Cumple con el requisito del enunciado de tener 2 enrutadores en cascada.
     /// </summary>
     public class MCPService : IMCPService
     {
@@ -24,26 +23,44 @@ namespace Backend.MCP
             ILLMRouter llmRouter,
             IRepository<Card> repository)
         {
-            _ruleRouter = ruleRouter;
-            _llmRouter = llmRouter;
-            _repository = repository;
+            _ruleRouter = ruleRouter ?? throw new ArgumentNullException(nameof(ruleRouter));
+            _llmRouter = llmRouter ?? throw new ArgumentNullException(nameof(llmRouter));
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         /// <summary>
-        /// Procesa una consulta: primero intenta con RuleRouter, luego con LLMRouter.
+        /// Procesa una consulta en lenguaje natural.
+        /// 1. Intenta primero con RuleRouter (reglas manuales) - se ejecuta primero según enunciado.
+        /// 2. Si no encuentra reglas, usa LLMRouter (IA) - se ejecuta como fallback.
         /// </summary>
         public async Task<MCPResult> ProcessQueryAsync(string query)
         {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return new MCPResult
+                {
+                    Response = "La consulta no puede estar vacía",
+                    RouterUsed = "Error",
+                    ResultCount = 0,
+                    ExecutionTimeMs = 0,
+                    Data = null
+                };
+            }
+
             var stopwatch = Stopwatch.StartNew();
 
             try
             {
-                // 1. Intentar primero con RuleRouter (reglas manuales)
+                Console.WriteLine($"[MCP] Processing query: '{query}'");
+
+                // 1. PRIMER ENRUTADOR: RuleRouter (reglas manuales)
+                Console.WriteLine("[MCP] Trying RuleRouter first...");
                 var ruleResult = await _ruleRouter.ProcessAsync(query);
 
                 if (ruleResult.Success)
                 {
                     stopwatch.Stop();
+                    Console.WriteLine($"[MCP] RuleRouter matched! Response: {ruleResult.Response}");
 
                     return new MCPResult
                     {
@@ -55,10 +72,12 @@ namespace Backend.MCP
                     };
                 }
 
-                // 2. Si no hay regla, usar LLMRouter
+                // 2. SEGUNDO ENRUTADOR: LLMRouter (IA como fallback)
+                Console.WriteLine("[MCP] No rule matched, using LLMRouter...");
                 var llmResult = await _llmRouter.ProcessAsync(query, _repository);
 
                 stopwatch.Stop();
+                Console.WriteLine($"[MCP] LLMRouter response: {llmResult.Response}");
 
                 return new MCPResult
                 {
@@ -72,10 +91,11 @@ namespace Backend.MCP
             catch (Exception ex)
             {
                 stopwatch.Stop();
+                Console.WriteLine($"[MCP] Error: {ex.Message}");
 
                 return new MCPResult
                 {
-                    Response = $"Error processing query: {ex.Message}",
+                    Response = $"Error al procesar la consulta: {ex.Message}",
                     RouterUsed = "Error",
                     ResultCount = 0,
                     ExecutionTimeMs = stopwatch.ElapsedMilliseconds,
@@ -89,8 +109,15 @@ namespace Backend.MCP
         /// </summary>
         public List<string> GetAvailableRules()
         {
-            return _ruleRouter.GetAvailableRules();
+            try
+            {
+                return _ruleRouter.GetAvailableRules();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[MCP] Error getting rules: {ex.Message}");
+                return new List<string> { "Error: No se pudieron obtener las reglas" };
+            }
         }
     }
 }
-

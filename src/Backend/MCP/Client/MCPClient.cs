@@ -1,3 +1,4 @@
+/*using Backend.MCP.Routers;
 using Backend.MCP.Server;
 using Backend.Persistence.Interfaces;
 using Backend.Persistence.Models;
@@ -77,4 +78,4 @@ namespace Backend.MCP.Client
         /// </summary>
         public MCPServer Server => _server;
     }
-}
+}*/
