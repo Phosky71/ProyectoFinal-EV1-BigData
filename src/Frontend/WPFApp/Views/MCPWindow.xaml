@@ -100,7 +100,7 @@
             <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         </Style>
 
-        <!-- GroupBox como “card” -->
+        <!-- GroupBox como "card" -->
         <Style TargetType="{x:Type GroupBox}">
             <Setter Property="Template">
                 <Setter.Value>

@@ -18,7 +18,7 @@
         <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="BorderBrushSoft" Color="#E5E7EB"/>
 
-        <!-- Menú superior: estilo más “app bar” -->
+        <!-- Menu superior: estilo más “app bar” -->
         <Style TargetType="{x:Type Menu}">
             <Setter Property="Background" Value="{StaticResource CardBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>

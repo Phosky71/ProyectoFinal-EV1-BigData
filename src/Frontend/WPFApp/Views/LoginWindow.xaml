@@ -1,7 +1,7 @@
 <Window x:Class="Frontend.WPFApp.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Iniciar sesión"
+        Title="Iniciar sesion"
         Height="520" Width="420"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"

@@ -186,7 +186,7 @@
 
                     <!-- ManaCost -->
                     <StackPanel Grid.Row="2" Grid.Column="0">
-                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Coste de maná"/>
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Coste de mana"/>
                         <TextBox Name="txtManaCost"/>
                     </StackPanel>
 
