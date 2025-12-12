@@ -1,25 +1,158 @@
 <Window x:Class="Frontend.WPFApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Magic: The Gathering - Proyecto Final" Height="600" Width="900"
-        WindowState="Maximized">
-    <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="Datos">
-                <MenuItem Header="Configuracion" Click="MenuConfiguration_Click"/>
-                <MenuItem Header="Ver Todas las Cartas" Click="MenuMaster_Click"/>
-                <MenuItem Header="Nueva Carta" Click="MenuNew_Click"/>
-            </MenuItem>
-            <MenuItem Header="MCP">
-                <MenuItem Header="Consulta Natural" Click="MenuMCP_Click"/>
-            </MenuItem>
-            <MenuItem Header="Salir" Click="MenuExit_Click"/>
-        </Menu>
+        Title="Magic: The Gathering - Proyecto Final"
+        Height="600" Width="900"
+        WindowState="Maximized"
+        Background="#F3F5F9"
+        FontFamily="Segoe UI"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
 
-        <Grid Name="ContentArea" Background="LightGray">
-            <TextBlock Text="Selecciona una opcion del menu" 
-                       HorizontalAlignment="Center" VerticalAlignment="Center" 
-                       Foreground="Gray" FontSize="20"/>
+    <Window.Resources>
+        <!-- Paleta (coherente con el login) -->
+        <Color x:Key="AccentColor">#4F46E5</Color>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#111827"/>
+        <SolidColorBrush x:Key="SubtleTextBrush" Color="#6B7280"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="BorderBrushSoft" Color="#E5E7EB"/>
+
+        <!-- Menú superior: estilo más “app bar” -->
+        <Style TargetType="{x:Type Menu}">
+            <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
+
+        <Style TargetType="{x:Type MenuItem}">
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="2,0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+        </Style>
+
+        <!-- Botones del lateral (accesos rápidos) -->
+        <Style x:Key="NavButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="Bd" CornerRadius="10" Background="{TemplateBinding Background}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#EEF2FF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#E0E7FF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Top bar -->
+        <Border Grid.Row="0"
+                Background="{StaticResource CardBrush}"
+                BorderBrush="{StaticResource BorderBrushSoft}"
+                BorderThickness="0,0,0,1">
+            <DockPanel LastChildFill="True">
+                <TextBlock DockPanel.Dock="Left"
+                           Text="MTG · Proyecto Final"
+                           Margin="16,10"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextBrush}"/>
+
+                <!-- Mantiene tu menú y eventos -->
+                <Menu DockPanel.Dock="Right">
+                    <MenuItem Header="Datos">
+                        <MenuItem Header="Configuración" Click="MenuConfiguration_Click"/>
+                        <MenuItem Header="Ver todas las cartas" Click="MenuMaster_Click"/>
+                        <MenuItem Header="Nueva carta" Click="MenuNew_Click"/>
+                    </MenuItem>
+                    <MenuItem Header="MCP">
+                        <MenuItem Header="Consulta natural" Click="MenuMCP_Click"/>
+                    </MenuItem>
+                    <MenuItem Header="Salir" Click="MenuExit_Click"/>
+                </Menu>
+            </DockPanel>
+        </Border>
+
+        <!-- Body -->
+        <Grid Grid.Row="1" Margin="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="240"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Lateral: accesos rápidos (misma funcionalidad: mismos handlers) -->
+            <Border Grid.Column="0"
+                    Background="{StaticResource CardBrush}"
+                    BorderBrush="{StaticResource BorderBrushSoft}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="14">
+                <StackPanel>
+                    <TextBlock Text="Navegación"
+                               FontSize="12.5"
+                               Foreground="{StaticResource SubtleTextBrush}"
+                               Margin="4,0,0,12"/>
+
+                    <Button Style="{StaticResource NavButtonStyle}" Content="Configuración" Click="MenuConfiguration_Click"/>
+                    <Button Style="{StaticResource NavButtonStyle}" Content="Ver todas las cartas" Click="MenuMaster_Click"/>
+                    <Button Style="{StaticResource NavButtonStyle}" Content="Nueva carta" Click="MenuNew_Click"/>
+
+                    <Separator Margin="0,10,0,10"/>
+
+                    <Button Style="{StaticResource NavButtonStyle}" Content="MCP · Consulta natural" Click="MenuMCP_Click"/>
+                    <Button Style="{StaticResource NavButtonStyle}" Content="Salir" Click="MenuExit_Click"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Área de contenido (se mantiene el nombre ContentArea) -->
+            <Border Grid.Column="2"
+                    Background="{StaticResource CardBrush}"
+                    BorderBrush="{StaticResource BorderBrushSoft}"
+                    BorderThickness="1"
+                    CornerRadius="16"
+                    Padding="18">
+                <Grid Name="ContentArea" Background="Transparent">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="Selecciona una opción para empezar"
+                                   Foreground="{StaticResource TextBrush}"
+                                   FontSize="18"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="Usa el menú superior o la barra lateral."
+                                   Margin="0,8,0,0"
+                                   Foreground="{StaticResource SubtleTextBrush}"
+                                   FontSize="13"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </Grid>
-    </DockPanel>
+    </Grid>
 </Window>

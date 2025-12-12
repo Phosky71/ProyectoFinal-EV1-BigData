@@ -1,68 +1,289 @@
 <Window x:Class="Frontend.WPFApp.DetailWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Detalle de Carta" Height="650" Width="500"
-        WindowStartupLocation="CenterScreen">
-    <Grid Margin="20">
+        Title="Detalle de carta"
+        Height="720" Width="920"
+        MinHeight="640" MinWidth="820"
+        WindowStartupLocation="CenterScreen"
+        Background="#F3F5F9"
+        FontFamily="Segoe UI"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <Window.Resources>
+        <!-- Paleta -->
+        <Color x:Key="AccentColor">#4F46E5</Color>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#111827"/>
+        <SolidColorBrush x:Key="SubtleTextBrush" Color="#6B7280"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="BorderBrushSoft" Color="#E5E7EB"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+
+        <!-- Inputs -->
+        <Style x:Key="BaseInputStyle" TargetType="{x:Type Control}">
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrushSoft}"/>
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="Padding" Value="12,0,12,0"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+
+        <Style TargetType="{x:Type TextBox}" BasedOn="{StaticResource BaseInputStyle}">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TextBox}">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="0"
+                                          VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Botones -->
+        <Style x:Key="BaseButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="MinWidth" Value="120"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="Bd" CornerRadius="12" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+        </Style>
+
+        <Style x:Key="NeutralButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Background" Value="#EEF2FF"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+        </Style>
+
+        <!-- Labels -->
+        <Style TargetType="{x:Type TextBlock}" x:Key="FieldLabelStyle">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="Foreground" Value="{StaticResource SubtleTextBrush}"/>
+            <Setter Property="Margin" Value="2,0,0,6"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="10"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="20"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="12"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Name="txtTitle" Text="Nueva Carta" 
-                   FontSize="16" FontWeight="Bold"/>
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{StaticResource CardBrush}"
+                BorderBrush="{StaticResource BorderBrushSoft}"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="16">
+            <StackPanel>
+                <TextBlock Name="txtTitle"
+                           Text="Nueva carta"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="{StaticResource TextBrush}"/>
+                <TextBlock Text="Completa los campos y guarda los cambios."
+                           Margin="0,6,0,0"
+                           FontSize="12.5"
+                           Foreground="{StaticResource SubtleTextBrush}"/>
+            </StackPanel>
+        </Border>
 
-        <Label Grid.Row="2" Content="Nombre:"/>
-        <TextBox Grid.Row="2" Name="txtName" Margin="120,0,0,5"/>
+        <!-- Body (scroll) -->
+        <Border Grid.Row="2"
+                Background="{StaticResource CardBrush}"
+                BorderBrush="{StaticResource BorderBrushSoft}"
+                BorderThickness="1"
+                CornerRadius="16">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Padding="16">
+                <!-- Grid 2 columnas -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-        <Label Grid.Row="3" Content="Coste de Mana:"/>
-        <TextBox Grid.Row="3" Name="txtManaCost" Margin="120,0,0,5"/>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Name -->
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Mana / Rarity -->
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Type / Set -->
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/>
+                        <!-- SetName / ImageUrl -->
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Power / Toughness -->
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Text -->
+                        <RowDefinition Height="14"/>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Errors -->
+                    </Grid.RowDefinitions>
 
-        <Label Grid.Row="4" Content="Tipo:"/>
-        <TextBox Grid.Row="4" Name="txtType" Margin="120,0,0,5"/>
+                    <!-- Nombre -->
+                    <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Nombre"/>
+                        <TextBox Name="txtName"/>
+                    </StackPanel>
 
-        <Label Grid.Row="5" Content="Rareza:"/>
-        <TextBox Grid.Row="5" Name="txtRarity" Margin="120,0,0,5"/>
+                    <!-- ManaCost -->
+                    <StackPanel Grid.Row="2" Grid.Column="0">
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Coste de maná"/>
+                        <TextBox Name="txtManaCost"/>
+                    </StackPanel>
 
-        <Label Grid.Row="6" Content="Set (codigo):"/>
-        <TextBox Grid.Row="6" Name="txtSet" Margin="120,0,0,5"/>
+                    <!-- Rareza -->
+                    <StackPanel Grid.Row="2" Grid.Column="2">
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Rareza"/>
+                        <TextBox Name="txtRarity"/>
+                    </StackPanel>
 
-        <Label Grid.Row="7" Content="Nombre del Set:"/>
-        <TextBox Grid.Row="7" Name="txtSetName" Margin="120,0,0,5"/>
+                    <!-- Tipo -->
+                    <StackPanel Grid.Row="4" Grid.Column="0">
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Tipo"/>
+                        <TextBox Name="txtType"/>
+                    </StackPanel>
 
-        <Label Grid.Row="8" Content="Texto:"/>
-        <TextBox Grid.Row="8" Name="txtText" Margin="120,0,0,5" 
-                 Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
+                    <!-- Set -->
+                    <StackPanel Grid.Row="4" Grid.Column="2">
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Set (código)"/>
+                        <TextBox Name="txtSet"/>
+                    </StackPanel>
 
-        <Label Grid.Row="9" Content="Fuerza:"/>
-        <TextBox Grid.Row="9" Name="txtPower" Margin="120,0,0,5"/>
+                    <!-- SetName -->
+                    <StackPanel Grid.Row="6" Grid.Column="0">
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Nombre del set"/>
+                        <TextBox Name="txtSetName"/>
+                    </StackPanel>
 
-        <Label Grid.Row="10" Content="Resistencia:"/>
-        <TextBox Grid.Row="10" Name="txtToughness" Margin="120,0,0,5"/>
+                    <!-- ImageUrl -->
+                    <StackPanel Grid.Row="6" Grid.Column="2">
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="URL de imagen"/>
+                        <TextBox Name="txtImageUrl"/>
+                    </StackPanel>
 
-        <Label Grid.Row="11" Content="URL Imagen:"/>
-        <TextBox Grid.Row="11" Name="txtImageUrl" Margin="120,0,0,5"/>
+                    <!-- Power -->
+                    <StackPanel Grid.Row="8" Grid.Column="0">
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Fuerza"/>
+                        <TextBox Name="txtPower"/>
+                    </StackPanel>
 
-        <TextBlock Grid.Row="13" Name="txtErrors" Foreground="Red" 
-                   TextWrapping="Wrap"/>
+                    <!-- Toughness -->
+                    <StackPanel Grid.Row="8" Grid.Column="2">
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Resistencia"/>
+                        <TextBox Name="txtToughness"/>
+                    </StackPanel>
 
-        <StackPanel Grid.Row="15" Orientation="Horizontal" HorizontalAlignment="Center">
-            <Button Content="Guardar" Width="100" Height="30" Margin="5" Click="Save_Click"/>
-            <Button Content="Cancelar" Width="100" Height="30" Margin="5" Click="Cancel_Click"/>
-        </StackPanel>
+                    <!-- Texto -->
+                    <StackPanel Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="3">
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Texto"/>
+                        <TextBox Name="txtText"
+                                 Height="140"
+                                 AcceptsReturn="True"
+                                 TextWrapping="Wrap"
+                                 VerticalContentAlignment="Top"
+                                 Padding="12"/>
+                    </StackPanel>
+
+                    <!-- Errores -->
+                    <Border Grid.Row="12" Grid.Column="0" Grid.ColumnSpan="3"
+                            Background="#FEF2F2"
+                            BorderBrush="#FCA5A5"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="10">
+                        <TextBlock Name="txtErrors"
+                                   Foreground="{StaticResource DangerBrush}"
+                                   TextWrapping="Wrap"
+                                   FontSize="12.5"/>
+                    </Border>
+                </Grid>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Footer -->
+        <Border Grid.Row="4"
+                Background="{StaticResource CardBrush}"
+                BorderBrush="{StaticResource BorderBrushSoft}"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="12">
+            <DockPanel LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left"
+                           Text="Tip: completa los campos obligatorios antes de guardar."
+                           VerticalAlignment="Center"
+                           Foreground="{StaticResource SubtleTextBrush}"
+                           FontSize="12.5"/>
+
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="Cancelar"
+                            Margin="0,0,10,0"
+                            Style="{StaticResource NeutralButtonStyle}"
+                            Click="Cancel_Click"/>
+                    <Button Content="Guardar"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Click="Save_Click"
+                            IsDefault="True"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
     </Grid>
 </Window>

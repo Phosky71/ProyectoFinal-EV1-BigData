@@ -1,68 +1,255 @@
 ﻿<Window x:Class="Frontend.WPFApp.ConfigurationWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Configuracion del Sistema" Height="450" Width="600"
-        WindowStartupLocation="CenterScreen">
-    <Grid Margin="20">
+        Title="Configuración"
+        Height="560" Width="860"
+        MinHeight="520" MinWidth="820"
+        WindowStartupLocation="CenterScreen"
+        Background="#F3F5F9"
+        FontFamily="Segoe UI"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <Window.Resources>
+        <!-- Paleta -->
+        <Color x:Key="AccentColor">#4F46E5</Color>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#111827"/>
+        <SolidColorBrush x:Key="SubtleTextBrush" Color="#6B7280"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="BorderBrushSoft" Color="#E5E7EB"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="#DC2626"/>
+
+        <!-- Botones -->
+        <Style x:Key="BaseButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="MinWidth" Value="140"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="Bd" CornerRadius="12" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+        </Style>
+
+        <Style x:Key="NeutralButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource BaseButtonStyle}">
+            <Setter Property="Background" Value="#EEF2FF"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+        </Style>
+
+        <!-- RadioButton estilo “pill” -->
+        <Style TargetType="{x:Type RadioButton}">
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type RadioButton}">
+                        <Border x:Name="Bd"
+                                CornerRadius="999"
+                                Padding="12,8"
+                                Background="#F9FAFB"
+                                BorderBrush="{StaticResource BorderBrushSoft}"
+                                BorderThickness="1">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Grid Width="16" Height="16" Margin="0,0,10,0">
+                                    <Ellipse Stroke="{StaticResource SubtleTextBrush}" StrokeThickness="2" Fill="Transparent"/>
+                                    <Ellipse x:Name="Dot" Width="8" Height="8" Fill="{StaticResource AccentBrush}" Visibility="Collapsed"/>
+                                </Grid>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#EEF2FF"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#C7D2FE"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#EEF2FF"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#A5B4FC"/>
+                                <Setter TargetName="Dot" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- GroupBox “card” (sin borde clásico) -->
+        <Style TargetType="{x:Type GroupBox}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type GroupBox}">
+                        <Border CornerRadius="16"
+                                Background="{StaticResource CardBrush}"
+                                BorderBrush="{StaticResource BorderBrushSoft}"
+                                BorderThickness="1"
+                                Padding="16">
+                            <StackPanel>
+                                <TextBlock Text="{TemplateBinding Header}"
+                                           FontSize="14.5"
+                                           FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextBrush}"/>
+                                <ContentPresenter Margin="0,12,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="20"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="20"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="20"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="10"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="12"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="12"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- TÍTULO -->
-        <TextBlock Grid.Row="0" Text="Configuracion del Sistema" 
-                   FontSize="18" FontWeight="Bold"/>
-
-        <!-- SECCIÓN 1: IMPORTAR DATOS -->
-        <GroupBox Grid.Row="2" Header="Importar Datos de Kaggle">
-            <StackPanel Margin="10">
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                    Este proceso cargara los datos del dataset de Kaggle (93,643 cartas)
-                    en MEMORIA y MYSQL simultaneamente. Puede tardar varios minutos.
-                </TextBlock>
-                <Button Name="btnImport" Content="Importar a MEMORIA y MYSQL" 
-                        Width="250" Height="35" Click="Import_Click"/>
+        <!-- Header -->
+        <Border Grid.Row="0"
+                Background="{StaticResource CardBrush}"
+                BorderBrush="{StaticResource BorderBrushSoft}"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="16">
+            <StackPanel>
+                <TextBlock Text="Configuración del sistema"
+                           FontSize="18"
+                           FontWeight="Bold"
+                           Foreground="{StaticResource TextBrush}"/>
+                <TextBlock Text="Importa el dataset y elige el modo de persistencia que usará la API para el CRUD."
+                           Margin="0,6,0,0"
+                           FontSize="12.5"
+                           Foreground="{StaticResource SubtleTextBrush}"/>
             </StackPanel>
-        </GroupBox>
+        </Border>
 
-        <!-- SECCIÓN 2: CAMBIAR SISTEMA DE PERSISTENCIA -->
-        <GroupBox Grid.Row="4" Header="Sistema de Persistencia Activo">
-            <StackPanel Margin="10">
-                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
-                    Selecciona que sistema de persistencia usara la API para las operaciones CRUD.
-                    Los datos se mantienen en ambos sistemas, solo cambia cual se consulta.
-                </TextBlock>
+        <!-- Body -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                    <RadioButton Name="rbMemory" Content="Memoria (LINQ)" 
-                                 GroupName="Persistence" Margin="10"
-                                 Checked="Persistence_Changed"/>
-                    <RadioButton Name="rbMySQL" Content="MySQL (Base de Datos)" 
-                                 GroupName="Persistence" Margin="10"
-                                 Checked="Persistence_Changed"/>
+            <!-- Importar Kaggle -->
+            <GroupBox Grid.Column="0" Header="Importar datos de Kaggle">
+                <StackPanel>
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="{StaticResource SubtleTextBrush}"
+                               FontSize="12.5">
+                        Este proceso cargará el dataset (93.643 cartas) en Memoria y MySQL. Puede tardar varios minutos.
+                    </TextBlock>
+
+                    <!-- Opcional: barra de progreso indeterminada (déjala visible/collapsed desde tu code-behind) -->
+                    <ProgressBar x:Name="pbImport"
+                                 Margin="0,12,0,0"
+                                 Height="10"
+                                 IsIndeterminate="True"
+                                 Visibility="Collapsed"/>
+
+                    <Button x:Name="btnImport"
+                            Margin="0,14,0,0"
+                            Content="Importar a Memoria y MySQL"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Click="Import_Click"/>
                 </StackPanel>
+            </GroupBox>
 
-                <TextBlock Name="txtCurrentMode" HorizontalAlignment="Center" 
-                           Margin="0,10,0,0" FontWeight="Bold" FontSize="12"/>
-            </StackPanel>
-        </GroupBox>
+            <!-- Persistencia -->
+            <GroupBox Grid.Column="2" Header="Sistema de persistencia activo">
+                <StackPanel>
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="{StaticResource SubtleTextBrush}"
+                               FontSize="12.5">
+                        Selecciona el modo con el que la API resolverá las operaciones CRUD. Los datos existen en ambos sistemas; solo cambia el origen consultado.
+                    </TextBlock>
 
-        <!-- ESTADO GENERAL -->
-        <TextBlock Grid.Row="6" Name="txtStatus" 
-                   HorizontalAlignment="Center" TextWrapping="Wrap"
-                   FontSize="12"/>
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0,14,0,0"
+                                HorizontalAlignment="Left">
+                        <RadioButton x:Name="rbMemory"
+                                     Content="Memoria (LINQ)"
+                                     GroupName="Persistence"
+                                     Checked="Persistence_Changed"/>
+                        <RadioButton x:Name="rbMySQL"
+                                     Content="MySQL (Base de datos)"
+                                     GroupName="Persistence"
+                                     Checked="Persistence_Changed"/>
+                    </StackPanel>
 
-        <!-- BOTÓN CERRAR -->
-        <Button Grid.Row="10" Content="Cerrar" Width="100" Height="30" 
-                Click="Close_Click" HorizontalAlignment="Center"/>
+                    <Border Margin="0,14,0,0"
+                            Background="#F9FAFB"
+                            BorderBrush="{StaticResource BorderBrushSoft}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="Modo actual"
+                                       FontSize="12.5"
+                                       Foreground="{StaticResource SubtleTextBrush}"/>
+                            <TextBlock x:Name="txtCurrentMode"
+                                       Margin="0,6,0,0"
+                                       FontWeight="SemiBold"
+                                       FontSize="13.5"
+                                       Foreground="{StaticResource TextBrush}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+
+        <!-- Status -->
+        <Border Grid.Row="4"
+                Background="{StaticResource CardBrush}"
+                BorderBrush="{StaticResource BorderBrushSoft}"
+                BorderThickness="1"
+                CornerRadius="16"
+                Padding="12">
+            <DockPanel LastChildFill="False">
+                <TextBlock x:Name="txtStatus"
+                           DockPanel.Dock="Left"
+                           TextWrapping="Wrap"
+                           Foreground="{StaticResource SubtleTextBrush}"
+                           FontSize="12.5"
+                           VerticalAlignment="Center"/>
+
+                <Button Content="Cerrar"
+                        DockPanel.Dock="Right"
+                        Style="{StaticResource NeutralButtonStyle}"
+                        Click="Close_Click"/>
+            </DockPanel>
+        </Border>
     </Grid>
 </Window>
