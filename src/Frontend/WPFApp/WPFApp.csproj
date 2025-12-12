@@ -14,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Referencia al backend, ajusta el nombre del csproj real -->
     <ProjectReference Include="..\..\Backend\API\API.csproj" />
   </ItemGroup>
 

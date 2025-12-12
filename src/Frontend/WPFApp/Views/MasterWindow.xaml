@@ -1,0 +1,41 @@
+<Window x:Class="Frontend.WPFApp.MasterWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Listado de Cartas" Height="500" Width="900"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Todas las Cartas" 
+                   FontSize="16" FontWeight="Bold"/>
+
+        <DataGrid Grid.Row="2" Name="dgData" AutoGenerateColumns="False"
+                  IsReadOnly="True" SelectionMode="Single">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="80"/>
+                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
+                <DataGridTextColumn Header="Coste" Binding="{Binding ManaCost}" Width="80"/>
+                <DataGridTextColumn Header="Tipo" Binding="{Binding Type}" Width="150"/>
+                <DataGridTextColumn Header="Rareza" Binding="{Binding Rarity}" Width="100"/>
+                <DataGridTextColumn Header="Set" Binding="{Binding Set}" Width="80"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <TextBlock Grid.Row="4" Name="txtStatus" TextWrapping="Wrap" Foreground="Gray"/>
+
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button Content="Editar" Width="100" Height="30" Margin="5" Click="Edit_Click"/>
+            <Button Content="Eliminar" Width="100" Height="30" Margin="5" Click="Delete_Click"/>
+            <Button Content="Actualizar" Width="100" Height="30" Margin="5" Click="Refresh_Click"/>
+            <Button Content="Cerrar" Width="100" Height="30" Margin="5" Click="Close_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

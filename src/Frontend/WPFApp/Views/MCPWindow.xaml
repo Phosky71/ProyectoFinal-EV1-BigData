@@ -1,0 +1,59 @@
+<Window x:Class="Frontend.WPFApp.MCPWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Consulta MCP" Height="650" Width="900"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="200"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        
+        <TextBlock Grid.Row="0" Text="Consulta en Lenguaje Natural" 
+                   FontSize="16" FontWeight="Bold"/>
+
+        
+        <Border Grid.Row="2" BorderBrush="Gray" BorderThickness="1">
+            <TextBox Name="txtHistory" IsReadOnly="True" 
+                     TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                     Background="#FAFAFA" Padding="10"/>
+        </Border>
+
+       
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0" Name="txtInput" 
+                     KeyDown="txtInput_KeyDown" Height="30" VerticalContentAlignment="Center"/>
+            <Button Grid.Column="2" Name="btnSend" Content="Enviar" 
+                    Width="100" Height="30" Click="Send_Click"/>
+        </Grid>
+
+
+        <GroupBox Grid.Row="8" Header="Resultados (Cartas encontradas)">
+            <DataGrid Name="dgResults" AutoGenerateColumns="False"
+                      IsReadOnly="True" SelectionMode="Single"
+                      HeadersVisibility="Column">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*"/>
+                    <DataGridTextColumn Header="Coste" Binding="{Binding ManaCost}" Width="80"/>
+                    <DataGridTextColumn Header="Tipo" Binding="{Binding Type}" Width="150"/>
+                    <DataGridTextColumn Header="Rareza" Binding="{Binding Rarity}" Width="100"/>
+                    <DataGridTextColumn Header="Set" Binding="{Binding Set}" Width="60"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </GroupBox>
+    </Grid>
+</Window>

@@ -36,17 +36,19 @@ namespace Backend.Persistence.MySQL
                         ManaCost VARCHAR(50),
                         Type VARCHAR(200),
                         Rarity VARCHAR(50),
+                        `Set` VARCHAR(10),
                         SetName VARCHAR(200),
-                        Text VARCHAR(1000),
+                        Text TEXT,
                         Power VARCHAR(10),
                         Toughness VARCHAR(10),
-                        ImageUrl VARCHAR(500),
+                        ImageUrl TEXT,
                         MultiverseId VARCHAR(50),
                         CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         UpdatedAt TIMESTAMP NULL ON UPDATE CURRENT_TIMESTAMP,
                         INDEX idx_name (Name),
                         INDEX idx_type (Type),
-                        INDEX idx_rarity (Rarity)
+                        INDEX idx_rarity (Rarity),
+                        INDEX idx_set (`Set`)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
                 ", conn);
 
@@ -109,8 +111,8 @@ namespace Backend.Persistence.MySQL
             await conn.OpenAsync();
 
             var cmd = new MySqlCommand(@"
-                INSERT INTO Cards (Id, Name, ManaCost, Type, Rarity, SetName, Text, Power, Toughness, ImageUrl, MultiverseId, CreatedAt) 
-                VALUES (@Id, @Name, @ManaCost, @Type, @Rarity, @SetName, @Text, @Power, @Toughness, @ImageUrl, @MultiverseId, @CreatedAt)
+                INSERT INTO Cards (Id, Name, ManaCost, Type, Rarity, `Set`, SetName, Text, Power, Toughness, ImageUrl, MultiverseId, CreatedAt) 
+                VALUES (@Id, @Name, @ManaCost, @Type, @Rarity, @Set, @SetName, @Text, @Power, @Toughness, @ImageUrl, @MultiverseId, @CreatedAt)
             ", conn);
 
             AddParameters(cmd, entity);
@@ -128,8 +130,10 @@ namespace Backend.Persistence.MySQL
 
             var cmd = new MySqlCommand(@"
                 UPDATE Cards 
-                SET Name=@Name, ManaCost=@ManaCost, Type=@Type, Rarity=@Rarity, SetName=@SetName, 
-                    Text=@Text, Power=@Power, Toughness=@Toughness, ImageUrl=@ImageUrl, MultiverseId=@MultiverseId,
+                SET Name=@Name, ManaCost=@ManaCost, Type=@Type, Rarity=@Rarity, 
+                    `Set`=@Set, SetName=@SetName, 
+                    Text=@Text, Power=@Power, Toughness=@Toughness, 
+                    ImageUrl=@ImageUrl, MultiverseId=@MultiverseId,
                     UpdatedAt=@UpdatedAt
                 WHERE Id=@Id
             ", conn);
@@ -163,50 +167,80 @@ namespace Backend.Persistence.MySQL
 
         /// <summary>
         /// Carga datos desde CSV de Kaggle usando MemoryRepository como intermediario.
-        /// Implementa bulk insert para mejor rendimiento.
+        /// ESTRATEGIA: 
+        /// - El CSV ya tiene IDs únicos que se preservan
+        /// - ON DUPLICATE KEY UPDATE: Si el ID existe, actualiza los datos
+        /// - Si el ID no existe, inserta nueva carta
+        /// - Cartas creadas manualmente se preservan (tienen IDs diferentes)
         /// </summary>
         public async Task<int> LoadDataAsync(string sourcePath)
         {
-            // Usar MemoryRepository para parsear el CSV (reutilizar código)
             var tempMemoryRepo = new Memory.MemoryRepository();
             await tempMemoryRepo.LoadDataAsync(sourcePath);
             var cards = (await tempMemoryRepo.GetAllAsync()).ToList();
 
+            if (cards.Count == 0)
+            {
+                Console.WriteLine("No cards to load from CSV");
+                return 0;
+            }
+
             using var conn = new MySqlConnection(_connectionString);
             await conn.OpenAsync();
 
-            // Limpiar tabla antes de cargar
-            var clearCmd = new MySqlCommand("TRUNCATE TABLE Cards", conn);
-            await clearCmd.ExecuteNonQueryAsync();
+            Console.WriteLine($"Loading {cards.Count} cards from Kaggle CSV...");
+            Console.WriteLine("Using ON DUPLICATE KEY UPDATE to prevent duplicates and preserve manual cards");
 
-            // Usar transacción para bulk insert eficiente
             using var transaction = await conn.BeginTransactionAsync();
-            int insertedCount = 0;
+            int processedCount = 0;
+            int batchSize = 100;
 
             try
             {
                 foreach (var card in cards)
                 {
+
                     var insertCmd = new MySqlCommand(@"
-                        INSERT INTO Cards (Id, Name, ManaCost, Type, Rarity, SetName, Text, Power, Toughness, ImageUrl, MultiverseId, CreatedAt) 
-                        VALUES (@Id, @Name, @ManaCost, @Type, @Rarity, @SetName, @Text, @Power, @Toughness, @ImageUrl, @MultiverseId, @CreatedAt)
+                        INSERT INTO Cards (
+                            Id, Name, ManaCost, Type, Rarity, `Set`, SetName, 
+                            Text, Power, Toughness, ImageUrl, MultiverseId, CreatedAt
+                        ) 
+                        VALUES (
+                            @Id, @Name, @ManaCost, @Type, @Rarity, @Set, @SetName, 
+                            @Text, @Power, @Toughness, @ImageUrl, @MultiverseId, @CreatedAt
+                        )
                         ON DUPLICATE KEY UPDATE 
-                            Name=VALUES(Name), ManaCost=VALUES(ManaCost), Type=VALUES(Type),
-                            Rarity=VALUES(Rarity), SetName=VALUES(SetName), Text=VALUES(Text),
-                            Power=VALUES(Power), Toughness=VALUES(Toughness), ImageUrl=VALUES(ImageUrl),
-                            MultiverseId=VALUES(MultiverseId), UpdatedAt=CURRENT_TIMESTAMP
+                            Name=VALUES(Name), 
+                            ManaCost=VALUES(ManaCost), 
+                            Type=VALUES(Type),
+                            Rarity=VALUES(Rarity), 
+                            `Set`=VALUES(`Set`), 
+                            SetName=VALUES(SetName), 
+                            Text=VALUES(Text), 
+                            Power=VALUES(Power), 
+                            Toughness=VALUES(Toughness), 
+                            ImageUrl=VALUES(ImageUrl), 
+                            MultiverseId=VALUES(MultiverseId), 
+                            UpdatedAt=CURRENT_TIMESTAMP
                     ", conn, transaction as MySqlTransaction);
 
                     AddParameters(insertCmd, card);
                     insertCmd.Parameters.AddWithValue("@CreatedAt", card.CreatedAt);
 
                     await insertCmd.ExecuteNonQueryAsync();
-                    insertedCount++;
+                    processedCount++;
+
+                    if (processedCount % batchSize == 0)
+                    {
+                        Console.WriteLine($"Processed {processedCount}/{cards.Count} cards...");
+                    }
                 }
 
                 await transaction.CommitAsync();
-                Console.WriteLine($"Loaded {insertedCount} cards into MySQL");
-                return insertedCount;
+                Console.WriteLine($"Successfully loaded {processedCount} cards into MySQL");
+                Console.WriteLine("Cards from CSV were inserted or updated (no duplicates)");
+                Console.WriteLine("Manual cards were preserved");
+                return processedCount;
             }
             catch (Exception ex)
             {
@@ -231,6 +265,52 @@ namespace Backend.Persistence.MySQL
             Console.WriteLine("MySQL table cleared");
         }
 
+        public async Task<List<Card>> SearchCardsAsync(List<string> terms)
+        {
+            var results = new List<Card>();
+            using var conn = new MySqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var whereClauses = new List<string>();
+            var parameters = new List<MySqlParameter>();
+
+            for (int i = 0; i < terms.Count; i++)
+            {
+                string paramName = $"@term{i}";
+                whereClauses.Add($"(Name LIKE {paramName} OR Type LIKE {paramName} OR SetName LIKE {paramName})");
+                parameters.Add(new MySqlParameter(paramName, $"%{terms[i]}%"));
+            }
+
+            string sql = $"SELECT * FROM Cards WHERE {string.Join(" OR ", whereClauses)} LIMIT 20";
+
+            using var cmd = new MySqlCommand(sql, conn);
+            cmd.Parameters.AddRange(parameters.ToArray());
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                results.Add(MapReaderToCard(reader));
+            }
+
+            return results;
+        }
+
+        public async Task<bool> TestConnectionAsync()
+        {
+            try
+            {
+                using var conn = new MySqlConnection(_connectionString);
+                await conn.OpenAsync();
+                var cmd = new MySqlCommand("SELECT 1", conn);
+                await cmd.ExecuteScalarAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         // ==================== MÉTODOS PRIVADOS ====================
 
         private Card MapReaderToCard(IDataReader reader)
@@ -242,6 +322,7 @@ namespace Backend.Persistence.MySQL
                 ManaCost = reader["ManaCost"]?.ToString(),
                 Type = reader["Type"]?.ToString(),
                 Rarity = reader["Rarity"]?.ToString(),
+                Set = reader["Set"]?.ToString(),
                 SetName = reader["SetName"]?.ToString(),
                 Text = reader["Text"]?.ToString(),
                 Power = reader["Power"]?.ToString(),
@@ -260,6 +341,7 @@ namespace Backend.Persistence.MySQL
             cmd.Parameters.AddWithValue("@ManaCost", entity.ManaCost ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Type", entity.Type ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Rarity", entity.Rarity ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Set", entity.Set ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@SetName", entity.SetName ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Text", entity.Text ?? (object)DBNull.Value);
             cmd.Parameters.AddWithValue("@Power", entity.Power ?? (object)DBNull.Value);

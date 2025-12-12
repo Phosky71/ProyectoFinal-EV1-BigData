@@ -1,0 +1,25 @@
+<Window x:Class="Frontend.WPFApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Magic: The Gathering - Proyecto Final" Height="600" Width="900"
+        WindowState="Maximized">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="Datos">
+                <MenuItem Header="Configuracion" Click="MenuConfiguration_Click"/>
+                <MenuItem Header="Ver Todas las Cartas" Click="MenuMaster_Click"/>
+                <MenuItem Header="Nueva Carta" Click="MenuNew_Click"/>
+            </MenuItem>
+            <MenuItem Header="MCP">
+                <MenuItem Header="Consulta Natural" Click="MenuMCP_Click"/>
+            </MenuItem>
+            <MenuItem Header="Salir" Click="MenuExit_Click"/>
+        </Menu>
+
+        <Grid Name="ContentArea" Background="LightGray">
+            <TextBlock Text="Selecciona una opcion del menu" 
+                       HorizontalAlignment="Center" VerticalAlignment="Center" 
+                       Foreground="Gray" FontSize="20"/>
+        </Grid>
+    </DockPanel>
+</Window>

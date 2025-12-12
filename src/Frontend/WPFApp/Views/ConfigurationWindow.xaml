@@ -1,0 +1,68 @@
+﻿<Window x:Class="Frontend.WPFApp.ConfigurationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configuracion del Sistema" Height="450" Width="600"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- TÍTULO -->
+        <TextBlock Grid.Row="0" Text="Configuracion del Sistema" 
+                   FontSize="18" FontWeight="Bold"/>
+
+        <!-- SECCIÓN 1: IMPORTAR DATOS -->
+        <GroupBox Grid.Row="2" Header="Importar Datos de Kaggle">
+            <StackPanel Margin="10">
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                    Este proceso cargara los datos del dataset de Kaggle (93,643 cartas)
+                    en MEMORIA y MYSQL simultaneamente. Puede tardar varios minutos.
+                </TextBlock>
+                <Button Name="btnImport" Content="Importar a MEMORIA y MYSQL" 
+                        Width="250" Height="35" Click="Import_Click"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- SECCIÓN 2: CAMBIAR SISTEMA DE PERSISTENCIA -->
+        <GroupBox Grid.Row="4" Header="Sistema de Persistencia Activo">
+            <StackPanel Margin="10">
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,10">
+                    Selecciona que sistema de persistencia usara la API para las operaciones CRUD.
+                    Los datos se mantienen en ambos sistemas, solo cambia cual se consulta.
+                </TextBlock>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <RadioButton Name="rbMemory" Content="Memoria (LINQ)" 
+                                 GroupName="Persistence" Margin="10"
+                                 Checked="Persistence_Changed"/>
+                    <RadioButton Name="rbMySQL" Content="MySQL (Base de Datos)" 
+                                 GroupName="Persistence" Margin="10"
+                                 Checked="Persistence_Changed"/>
+                </StackPanel>
+
+                <TextBlock Name="txtCurrentMode" HorizontalAlignment="Center" 
+                           Margin="0,10,0,0" FontWeight="Bold" FontSize="12"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- ESTADO GENERAL -->
+        <TextBlock Grid.Row="6" Name="txtStatus" 
+                   HorizontalAlignment="Center" TextWrapping="Wrap"
+                   FontSize="12"/>
+
+        <!-- BOTÓN CERRAR -->
+        <Button Grid.Row="10" Content="Cerrar" Width="100" Height="30" 
+                Click="Close_Click" HorizontalAlignment="Center"/>
+    </Grid>
+</Window>

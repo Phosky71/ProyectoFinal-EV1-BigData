@@ -13,12 +13,10 @@ namespace Backend.Persistence.Memory
     /// </summary>
     public class MemoryRepository : IRepository<Card>
     {
-        // ConcurrentDictionary es thread-safe (mejor que List<Card> estático)
         private static readonly ConcurrentDictionary<string, Card> _data = new();
 
         public async Task<IEnumerable<Card>> GetAllAsync()
         {
-            // LINQ sobre datos en memoria (requisito del enunciado)
             return await Task.FromResult(_data.Values.OrderBy(c => c.Name).ToList());
         }
 
@@ -83,12 +81,11 @@ namespace Backend.Persistence.Memory
                 using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
                 {
                     HasHeaderRecord = true,
-                    MissingFieldFound = null, // Ignorar campos faltantes
-                    BadDataFound = null, // Ignorar datos malformados
+                    MissingFieldFound = null,
+                    BadDataFound = null,
                     TrimOptions = TrimOptions.Trim
                 });
 
-                // Mapeo directo a Card usando los atributos [Name]
                 var cards = csv.GetRecords<Card>();
 
                 await Task.Run(() =>
@@ -97,13 +94,11 @@ namespace Backend.Persistence.Memory
                     {
                         try
                         {
-                            // Generar ID si no existe o está vacío
                             if (string.IsNullOrWhiteSpace(card.Id))
                             {
                                 card.Id = Guid.NewGuid().ToString();
                             }
 
-                            // Asegurar que Name no sea nulo
                             if (string.IsNullOrWhiteSpace(card.Name))
                             {
                                 card.Name = "Unknown";
@@ -148,7 +143,6 @@ namespace Backend.Persistence.Memory
         {
             var lowerQuery = query.ToLower();
 
-            // Ejemplo de LINQ sobre datos en memoria
             var results = _data.Values
                 .Where(c =>
                     c.Name.ToLower().Contains(lowerQuery) ||

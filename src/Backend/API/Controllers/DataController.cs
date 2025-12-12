@@ -11,45 +11,35 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProyectoFinal.Backend.API.Controllers
 {
-    /// <summary>
-    /// Controlador de datos (CRUD de cartas de Magic: The Gathering).
-    /// Requiere autenticación JWT en todos los endpoints.
-    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Requiere JWT
+    [Authorize]
     public class DataController : ControllerBase
     {
-        private readonly IRepository<Card> _repository;
         private readonly IKaggleDataLoader _kaggleLoader;
         private readonly PersistenceManager _persistenceManager;
 
         public DataController(
-            IRepository<Card> repository,
             IKaggleDataLoader kaggleLoader,
             PersistenceManager persistenceManager)
         {
-            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _kaggleLoader = kaggleLoader ?? throw new ArgumentNullException(nameof(kaggleLoader));
             _persistenceManager = persistenceManager ?? throw new ArgumentNullException(nameof(persistenceManager));
         }
 
+        private IRepository<Card> CurrentRepository => _persistenceManager.CurrentRepository;
+
         // ==================== CRUD OPERATIONS ====================
 
-        /// <summary>
-        /// Obtiene todas las cartas.
-        /// GET: api/data
-        /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(GetAllResponse), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<Card>>> GetAll([FromQuery] int? limit = null)
         {
             try
             {
-                var items = await _repository.GetAllAsync();
+                var items = await CurrentRepository.GetAllAsync();
                 var itemsList = items.ToList();
 
-                // Aplicar límite si se especifica
                 if (limit.HasValue && limit.Value > 0)
                 {
                     itemsList = itemsList.Take(limit.Value).ToList();
@@ -58,7 +48,7 @@ namespace ProyectoFinal.Backend.API.Controllers
                 return Ok(new GetAllResponse
                 {
                     Count = itemsList.Count,
-                    PersistenceMode = await _repository.GetPersistenceModeAsync(),
+                    PersistenceMode = await CurrentRepository.GetPersistenceModeAsync(),
                     Data = itemsList
                 });
             }
@@ -68,10 +58,6 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Obtiene una carta por ID.
-        /// GET: api/data/{id}
-        /// </summary>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(Card), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -84,7 +70,7 @@ namespace ProyectoFinal.Backend.API.Controllers
 
             try
             {
-                var item = await _repository.GetByIdAsync(id);
+                var item = await CurrentRepository.GetByIdAsync(id);
 
                 if (item == null)
                 {
@@ -99,10 +85,6 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Crea una nueva carta.
-        /// POST: api/data
-        /// </summary>
         [HttpPost]
         [ProducesResponseType(typeof(Card), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -120,13 +102,12 @@ namespace ProyectoFinal.Backend.API.Controllers
 
             try
             {
-                // Generar ID si no existe
                 if (string.IsNullOrWhiteSpace(card.Id))
                 {
                     card.Id = Guid.NewGuid().ToString();
                 }
 
-                await _repository.AddAsync(card);
+                await CurrentRepository.AddAsync(card);
 
                 return CreatedAtAction(nameof(GetById), new { id = card.Id }, card);
             }
@@ -136,10 +117,6 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Actualiza una carta existente.
-        /// PUT: api/data/{id}
-        /// </summary>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -163,14 +140,14 @@ namespace ProyectoFinal.Backend.API.Controllers
 
             try
             {
-                var existingItem = await _repository.GetByIdAsync(id);
+                var existingItem = await CurrentRepository.GetByIdAsync(id);
 
                 if (existingItem == null)
                 {
                     return NotFound(new { error = $"Card with ID '{id}' not found" });
                 }
 
-                await _repository.UpdateAsync(card);
+                await CurrentRepository.UpdateAsync(card);
 
                 return Ok(new { message = "Card updated successfully", data = card });
             }
@@ -180,10 +157,6 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Elimina una carta.
-        /// DELETE: api/data/{id}
-        /// </summary>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -196,14 +169,14 @@ namespace ProyectoFinal.Backend.API.Controllers
 
             try
             {
-                var existingItem = await _repository.GetByIdAsync(id);
+                var existingItem = await CurrentRepository.GetByIdAsync(id);
 
                 if (existingItem == null)
                 {
                     return NotFound(new { error = $"Card with ID '{id}' not found" });
                 }
 
-                await _repository.DeleteAsync(id);
+                await CurrentRepository.DeleteAsync(id);
 
                 return Ok(new { message = "Card deleted successfully", id = id });
             }
@@ -215,10 +188,6 @@ namespace ProyectoFinal.Backend.API.Controllers
 
         // ==================== KAGGLE DATA LOADING ====================
 
-        /// <summary>
-        /// Carga los datos del CSV de Kaggle al sistema de persistencia activo.
-        /// POST: api/data/load-kaggle
-        /// </summary>
         [HttpPost("load-kaggle")]
         [ProducesResponseType(typeof(LoadKaggleResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> LoadKaggleData()
@@ -251,10 +220,6 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Carga los datos del CSV de Kaggle específicamente en Memory.
-        /// POST: api/data/load-to-memory
-        /// </summary>
         [HttpPost("load-to-memory")]
         [ProducesResponseType(typeof(LoadKaggleResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> LoadToMemory()
@@ -278,10 +243,6 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Carga los datos del CSV de Kaggle específicamente en MySQL.
-        /// POST: api/data/load-to-mysql
-        /// </summary>
         [HttpPost("load-to-mysql")]
         [ProducesResponseType(typeof(LoadKaggleResponse), StatusCodes.Status200OK)]
         public async Task<IActionResult> LoadToMySQL()
@@ -305,10 +266,6 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Carga los datos a AMBOS sistemas de persistencia (Memory y MySQL).
-        /// POST: api/data/load-to-both
-        /// </summary>
         [HttpPost("load-to-both")]
         public async Task<IActionResult> LoadToBoth()
         {
@@ -342,10 +299,6 @@ namespace ProyectoFinal.Backend.API.Controllers
 
         // ==================== PERSISTENCE MANAGEMENT ====================
 
-        /// <summary>
-        /// Cambia el sistema de persistencia activo (Memory o MySQL).
-        /// POST: api/data/switch-persistence
-        /// </summary>
         [HttpPost("switch-persistence")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult SwitchPersistence([FromBody] SwitchPersistenceRequest request)
@@ -371,16 +324,12 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Obtiene el modo de persistencia actual.
-        /// GET: api/data/persistence-mode
-        /// </summary>
         [HttpGet("persistence-mode")]
         public async Task<IActionResult> GetPersistenceMode()
         {
             try
             {
-                var mode = await _repository.GetPersistenceModeAsync();
+                var mode = await CurrentRepository.GetPersistenceModeAsync();
                 return Ok(new { persistenceMode = mode });
             }
             catch (Exception ex)
@@ -389,17 +338,13 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Limpia todos los datos del sistema de persistencia actual.
-        /// DELETE: api/data/clear
-        /// </summary>
         [HttpDelete("clear")]
-        [Authorize(Roles = "Admin")] // Solo administradores
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ClearAllData()
         {
             try
             {
-                await _repository.ClearAllAsync();
+                await CurrentRepository.ClearAllAsync();
                 return Ok(new { message = "All data cleared successfully" });
             }
             catch (Exception ex)
@@ -410,22 +355,18 @@ namespace ProyectoFinal.Backend.API.Controllers
 
         // ==================== STATISTICS & SEARCH ====================
 
-        /// <summary>
-        /// Obtiene estadísticas de las cartas cargadas.
-        /// GET: api/data/stats
-        /// </summary>
         [HttpGet("stats")]
         public async Task<IActionResult> GetStatistics()
         {
             try
             {
-                var items = await _repository.GetAllAsync();
+                var items = await CurrentRepository.GetAllAsync();
                 var itemsList = items.ToList();
 
                 var stats = new
                 {
                     totalCards = itemsList.Count,
-                    persistenceMode = await _repository.GetPersistenceModeAsync(),
+                    persistenceMode = await CurrentRepository.GetPersistenceModeAsync(),
                     byRarity = itemsList
                         .Where(c => !string.IsNullOrEmpty(c.Rarity))
                         .GroupBy(c => c.Rarity)
@@ -451,10 +392,6 @@ namespace ProyectoFinal.Backend.API.Controllers
             }
         }
 
-        /// <summary>
-        /// Busca cartas por nombre, tipo o texto.
-        /// GET: api/data/search?query=...
-        /// </summary>
         [HttpGet("search")]
         public async Task<IActionResult> Search([FromQuery] string query, [FromQuery] int? limit = 50)
         {
@@ -465,7 +402,7 @@ namespace ProyectoFinal.Backend.API.Controllers
 
             try
             {
-                var allItems = await _repository.GetAllAsync();
+                var allItems = await CurrentRepository.GetAllAsync();
                 var lowerQuery = query.ToLower();
 
                 var results = allItems
@@ -511,6 +448,6 @@ namespace ProyectoFinal.Backend.API.Controllers
     public class SwitchPersistenceRequest
     {
         [Required]
-        public string Mode { get; set; } = string.Empty; // "Memory" o "MySQL"
+        public string Mode { get; set; } = string.Empty;
     }
 }

@@ -29,7 +29,7 @@ namespace Backend.Persistence.Models
         /// Coste de maná de la carta (ej: "{3}{U}{U}").
         /// </summary>
         [StringLength(50)]
-        [Name("manaCost")]
+        [Name("mana_cost")]  // ? CAMBIADO: snake_case para coincidir con CSV
         public string? ManaCost { get; set; }
 
         /// <summary>
@@ -47,16 +47,23 @@ namespace Backend.Persistence.Models
         public string? Rarity { get; set; }
 
         /// <summary>
-        /// Nombre del set/expansión a la que pertenece.
+        /// Código del set/expansión (ej: "10E", "M21").
+        /// </summary>
+        [StringLength(10)]
+        [Name("set")]  // ? AÑADIDO: código corto del set
+        public string? Set { get; set; }
+
+        /// <summary>
+        /// Nombre del set/expansión a la que pertenece (ej: "Tenth Edition").
         /// </summary>
         [StringLength(200)]
-        [Name("setName")]
+        [Name("set_name")]  // ? CAMBIADO: snake_case para coincidir con CSV
         public string? SetName { get; set; }
 
         /// <summary>
         /// Texto de reglas de la carta.
         /// </summary>
-        [StringLength(1000)]
+        [StringLength(2000)]  // ? AUMENTADO: algunos textos son largos
         [Name("text")]
         public string? Text { get; set; }
 
@@ -79,14 +86,16 @@ namespace Backend.Persistence.Models
         /// </summary>
         [Url(ErrorMessage = "Invalid URL format")]
         [StringLength(500)]
-        [Name("imageUrl")]
+        [Name("image_url")]  // ? CAMBIADO: snake_case para coincidir con CSV
         public string? ImageUrl { get; set; }
 
         /// <summary>
         /// ID de Multiverse de Gatherer (identificador oficial de Wizards).
+        /// NOTA: Este campo existe en el CSV pero no lo usaremos activamente.
         /// </summary>
         [StringLength(50)]
-        [Name("multiverseid")]
+        [Name("multiverse_id")]  // ? CAMBIADO: snake_case
+        [Ignore]  // ? OPCIONAL: ignorar si no lo necesitas
         public string? MultiverseId { get; set; }
 
         /// <summary>
@@ -124,6 +133,29 @@ namespace Backend.Persistence.Models
             if (ManaCost.Contains("{G}")) colors.Add("Green");
 
             return colors.Count == 0 ? "Colorless" : string.Join(", ", colors);
+        }
+
+        /// <summary>
+        /// Obtiene una representación corta del texto (primeras 100 caracteres).
+        /// </summary>
+        public string GetShortText()
+        {
+            if (string.IsNullOrEmpty(Text)) return "";
+
+            return Text.Length > 100
+                ? Text.Substring(0, 97) + "..."
+                : Text;
+        }
+
+        /// <summary>
+        /// Obtiene el poder/resistencia formateado (ej: "4/4").
+        /// </summary>
+        public string GetPowerToughness()
+        {
+            if (string.IsNullOrEmpty(Power) || string.IsNullOrEmpty(Toughness))
+                return "";
+
+            return $"{Power}/{Toughness}";
         }
     }
 }

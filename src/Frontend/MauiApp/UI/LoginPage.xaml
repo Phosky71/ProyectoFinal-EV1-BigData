@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp.UI.LoginPage"
+             BackgroundColor="{AppThemeBinding Light=#f0f2f5, Dark=#121212}"
+             Title="Login">
+
+    <Grid>
+        <BoxView Color="#512BD4" HeightRequest="250" VerticalOptions="Start" />
+
+        <Frame VerticalOptions="Center" HorizontalOptions="Center" 
+               WidthRequest="300" CornerRadius="20" HasShadow="True" Padding="25" 
+               BackgroundColor="{AppThemeBinding Light=White, Dark=#1E1E1E}"
+               BorderColor="Transparent">
+
+            <VerticalStackLayout Spacing="15">
+                <Label Text="Bienvenido" FontSize="28" FontAttributes="Bold" 
+                       HorizontalOptions="Center" 
+                       TextColor="{AppThemeBinding Light=#333, Dark=White}" />
+
+                <Label Text="Inicia sesión para continuar" FontSize="14" 
+                       HorizontalOptions="Center" 
+                       TextColor="{AppThemeBinding Light=Gray, Dark=#B0B0B0}" 
+                       Margin="0,0,0,20"/>
+
+                <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333}" 
+                        StrokeThickness="1" StrokeShape="RoundRectangle 10"
+                        BackgroundColor="Transparent">
+                    <Entry x:Name="txtUsername" Placeholder="Usuario" Text="admin" Margin="10,0" 
+                           TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                           PlaceholderColor="{AppThemeBinding Light=Gray, Dark=Gray}"/>
+                </Border>
+
+                <Border Stroke="{AppThemeBinding Light=#E0E0E0, Dark=#333}" 
+                        StrokeThickness="1" StrokeShape="RoundRectangle 10"
+                        BackgroundColor="Transparent">
+                    <Entry x:Name="txtPassword" Placeholder="Contraseña" IsPassword="True" Text="admin123" Margin="10,0"
+                           TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                           PlaceholderColor="{AppThemeBinding Light=Gray, Dark=Gray}"/>
+                </Border>
+
+                <Button Text="INGRESAR" Clicked="Login_Clicked" 
+                        BackgroundColor="#512BD4" TextColor="White" CornerRadius="10" 
+                        FontAttributes="Bold" HeightRequest="50" Margin="0,20,0,0"/>
+            </VerticalStackLayout>
+        </Frame>
+    </Grid>
+</ContentPage>

@@ -56,14 +56,12 @@ namespace ProyectoFinal.Backend.API.Controllers
 
             try
             {
-                // Validar credenciales
                 if (!_users.TryGetValue(request.Username.ToLower(), out var user) ||
                     user.Password != request.Password)
                 {
                     return Unauthorized(new { error = "Invalid username or password" });
                 }
 
-                // Generar token JWT
                 var token = _jwtService.GenerateToken(user.Id, user.Username, user.Role);
 
                 return Ok(new LoginResponse
@@ -72,7 +70,7 @@ namespace ProyectoFinal.Backend.API.Controllers
                     Username = user.Username,
                     UserId = user.Id,
                     Role = user.Role,
-                    ExpiresIn = 3600 // 1 hora
+                    ExpiresIn = 3600
                 });
             }
             catch (Exception ex)
@@ -108,25 +106,22 @@ namespace ProyectoFinal.Backend.API.Controllers
 
             try
             {
-                // Verificar si el usuario ya existe
                 if (_users.ContainsKey(request.Username.ToLower()))
                 {
                     return Conflict(new { error = "Username already exists" });
                 }
 
-                // Crear nuevo usuario
                 var userId = Guid.NewGuid().ToString();
                 var newUser = new UserCredentials
                 {
                     Id = userId,
                     Username = request.Username,
-                    Password = request.Password, // En producción: hashear la contraseña
+                    Password = request.Password, //TODO HASH
                     Role = "User"
                 };
 
                 _users[request.Username.ToLower()] = newUser;
 
-                // Generar token JWT
                 var token = _jwtService.GenerateToken(userId, request.Username, "User");
 
                 return Ok(new RegisterResponse

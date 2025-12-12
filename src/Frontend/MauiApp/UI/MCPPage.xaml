@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp.UI.MCPPage"
+             Title="Asistente IA"
+             BackgroundColor="{AppThemeBinding Light=#f0f2f5, Dark=#121212}">
+
+    <Grid RowDefinitions="*, Auto, Auto" Padding="15" RowSpacing="10">
+
+        <Border Grid.Row="0" Stroke="Transparent" 
+                BackgroundColor="{AppThemeBinding Light=White, Dark=#1E1E1E}" 
+                StrokeShape="RoundRectangle 15" Padding="15">
+            <ScrollView>
+                <Label x:Name="lblHistory" 
+                       Text="Bienvenido al Asistente MCP. Pregunta por cartas..."
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                       LineBreakMode="WordWrap" />
+            </ScrollView>
+        </Border>
+
+        <CollectionView x:Name="cvResults" 
+                        Grid.Row="1" 
+                        HeightRequest="220"
+                        SelectionMode="None"
+                        IsVisible="False">
+
+            <CollectionView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" ItemSpacing="15"/>
+            </CollectionView.ItemsLayout>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Frame WidthRequest="150" Padding="0" CornerRadius="10" IsClippedToBounds="True" HasShadow="True" BorderColor="Gray">
+                        <Grid RowDefinitions="*, Auto" BackgroundColor="White">
+
+                            <BoxView Grid.Row="0" Color="#512BD4" />
+
+                            <Image Grid.Row="0"
+                                   Source="{Binding ImageUrl}" 
+                                   Aspect="AspectFill" 
+                                   VerticalOptions="Fill" 
+                                   HorizontalOptions="Fill"/>
+
+                            <BoxView Grid.Row="0" Color="Black" Opacity="0.5" 
+                                     VerticalOptions="End" HeightRequest="40"/>
+
+                            <Label Text="{Binding Name}" 
+                                   Grid.Row="0"
+                                   TextColor="White" 
+                                   FontAttributes="Bold"
+                                   FontSize="16"
+                                   HorizontalOptions="Center" 
+                                   VerticalOptions="End" 
+                                   HorizontalTextAlignment="Center"
+                                   Padding="5,0,5,5"/>
+
+                            <VerticalStackLayout Grid.Row="1" Padding="10" BackgroundColor="{AppThemeBinding Light=White, Dark=#333}">
+                                <Label Text="{Binding Type}" FontSize="10" LineBreakMode="TailTruncation" TextColor="Gray"/>
+                                <Label Text="{Binding SetName}" FontSize="10" FontAttributes="Italic" TextColor="#512BD4"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*, Auto" ColumnSpacing="10">
+            <Border Stroke="#512BD4" StrokeThickness="1" StrokeShape="RoundRectangle 20" 
+                    BackgroundColor="{AppThemeBinding Light=White, Dark=#1E1E1E}" 
+                    Padding="15,0" Grid.Column="0">
+                <Entry x:Name="txtInput" 
+                       Placeholder="Busca 'Black Lotus'..." 
+                       PlaceholderColor="Gray"
+                       TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                       BackgroundColor="Transparent" />
+            </Border>
+
+            <Button Grid.Column="1" Text="Enviar" Clicked="Send_Clicked" 
+                    BackgroundColor="#512BD4" TextColor="White" 
+                    CornerRadius="20" HeightRequest="50" WidthRequest="80"/>
+        </Grid>
+    </Grid>
+</ContentPage>

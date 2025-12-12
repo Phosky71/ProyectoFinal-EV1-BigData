@@ -1,0 +1,68 @@
+<Window x:Class="Frontend.WPFApp.DetailWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Detalle de Carta" Height="650" Width="500"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Name="txtTitle" Text="Nueva Carta" 
+                   FontSize="16" FontWeight="Bold"/>
+
+        <Label Grid.Row="2" Content="Nombre:"/>
+        <TextBox Grid.Row="2" Name="txtName" Margin="120,0,0,5"/>
+
+        <Label Grid.Row="3" Content="Coste de Mana:"/>
+        <TextBox Grid.Row="3" Name="txtManaCost" Margin="120,0,0,5"/>
+
+        <Label Grid.Row="4" Content="Tipo:"/>
+        <TextBox Grid.Row="4" Name="txtType" Margin="120,0,0,5"/>
+
+        <Label Grid.Row="5" Content="Rareza:"/>
+        <TextBox Grid.Row="5" Name="txtRarity" Margin="120,0,0,5"/>
+
+        <Label Grid.Row="6" Content="Set (codigo):"/>
+        <TextBox Grid.Row="6" Name="txtSet" Margin="120,0,0,5"/>
+
+        <Label Grid.Row="7" Content="Nombre del Set:"/>
+        <TextBox Grid.Row="7" Name="txtSetName" Margin="120,0,0,5"/>
+
+        <Label Grid.Row="8" Content="Texto:"/>
+        <TextBox Grid.Row="8" Name="txtText" Margin="120,0,0,5" 
+                 Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
+
+        <Label Grid.Row="9" Content="Fuerza:"/>
+        <TextBox Grid.Row="9" Name="txtPower" Margin="120,0,0,5"/>
+
+        <Label Grid.Row="10" Content="Resistencia:"/>
+        <TextBox Grid.Row="10" Name="txtToughness" Margin="120,0,0,5"/>
+
+        <Label Grid.Row="11" Content="URL Imagen:"/>
+        <TextBox Grid.Row="11" Name="txtImageUrl" Margin="120,0,0,5"/>
+
+        <TextBlock Grid.Row="13" Name="txtErrors" Foreground="Red" 
+                   TextWrapping="Wrap"/>
+
+        <StackPanel Grid.Row="15" Orientation="Horizontal" HorizontalAlignment="Center">
+            <Button Content="Guardar" Width="100" Height="30" Margin="5" Click="Save_Click"/>
+            <Button Content="Cancelar" Width="100" Height="30" Margin="5" Click="Cancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

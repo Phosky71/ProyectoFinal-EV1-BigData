@@ -47,7 +47,7 @@ namespace ProyectoFinal.Backend.API.Auth
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
-                new Claim(ClaimTypes.NameIdentifier, userId), // FIX: Necesario para GetUserIdFromToken
+                new Claim(ClaimTypes.NameIdentifier, userId),
                 new Claim(JwtRegisteredClaimNames.UniqueName, username),
                 new Claim(ClaimTypes.Name, username),
                 new Claim(ClaimTypes.Role, role),
@@ -88,14 +88,13 @@ namespace ProyectoFinal.Backend.API.Auth
                     ValidateAudience = true,
                     ValidAudience = _audience,
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero // No tolerancia de tiempo
+                    ClockSkew = TimeSpan.Zero 
                 }, out _);
 
                 return principal;
             }
             catch (Exception)
             {
-                // Token inválido, expirado o manipulado
                 return null;
             }
         }

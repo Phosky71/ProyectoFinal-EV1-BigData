@@ -1,6 +1,5 @@
-﻿using Backend.MCP;
-using Backend.MCP.Interfaces;
-using Backend.MCP.Routers;
+﻿using Backend.MCP.Client;
+using Backend.MCP.Server;
 using Backend.Persistence;
 using Backend.Persistence.Interfaces;
 using Backend.Persistence.Memory;
@@ -14,7 +13,6 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // ==================== CONFIGURACIÓN ====================
-
 var configuration = builder.Configuration;
 
 // ==================== SERVICIOS ====================
@@ -28,7 +26,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Proyecto Final API",
         Version = "v1",
-        Description = "API REST con JWT, MCP y persistencia Memory/MySQL (Patrón Open/Close)"
+        Description = "API REST con JWT, Arquitectura MCP Estándar (JSON-RPC) y LLM Local"
     });
 
     // Añadir JWT a Swagger
@@ -110,25 +108,23 @@ builder.Services.AddSingleton<IRepository<Card>>(sp =>
 
 Console.WriteLine($"Persistence mode inicial: {persistenceMode}");
 
-// ==================== MCP (Model Context Protocol) ====================
+// ==================== MCP (NUEVA ARQUITECTURA ESTÁNDAR) ====================
 
-// HttpClientFactory para LLMRouter
+// HttpClientFactory necesario para conectar con LM Studio
 builder.Services.AddHttpClient();
 
-// Routers
-builder.Services.AddSingleton<IRuleRouter>(sp =>
-    new RuleRouter(sp.GetRequiredService<IRepository<Card>>())
-);
+// 1. Registrar el SERVIDOR MCP (Expone Tools y Datos)
+// Recibe el Repositorio actual para ejecutar las consultas reales
+builder.Services.AddScoped<MagicCardMcpServer>();
 
-builder.Services.AddSingleton<ILLMRouter>(sp =>
-{
-    var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-    var apiKey = configuration["OpenAI:ApiKey"] ?? throw new InvalidOperationException("OpenAI API Key no configurada");
-    return new LLMRouter(httpClientFactory, apiKey);
-});
+// 2. Registrar el CLIENTE MCP (Orquestador Host)
+// Recibe el HttpClient para hablar con el LLM y el McpServer para ejecutar herramientas
+builder.Services.AddScoped<McpClientService>();
 
-// MCP Service
-builder.Services.AddSingleton<IMCPService, MCPService>();
+// Nota: Ya no comprobamos API Key porque usamos LM Studio Local.
+// Eliminamos RuleRouter, LLMRouter y MCPService antiguos.
+
+Console.WriteLine("MCP configurado: Arquitectura Cliente-Servidor (JSON-RPC) con LLM Local.");
 
 // ==================== KAGGLE DATA LOADER ====================
 
@@ -190,9 +186,9 @@ Console.WriteLine("====================================");
 Console.WriteLine($"Environment: {app.Environment.EnvironmentName}");
 Console.WriteLine($"Persistence: {persistenceMode}");
 Console.WriteLine($"JWT Issuer: {jwtIssuer}");
-Console.WriteLine($"JWT Audience: {jwtAudience}");
-Console.WriteLine($"Kaggle Dataset: {kaggleDatasetPath}");
-Console.WriteLine($"Swagger UI: {(app.Environment.IsDevelopment() ? "http://localhost:5000" : "Disabled")}");
+Console.WriteLine($"MCP Architecture: Standard (JSON-RPC)");
+Console.WriteLine($"LLM: Local (via LM Studio)");
+Console.WriteLine($"Swagger UI: {(app.Environment.IsDevelopment() ? "http://localhost:53620" : "Disabled")}");
 Console.WriteLine("====================================");
 
 app.Run();

@@ -17,6 +17,7 @@ public class PersistenceManager
     private string _currentMode;
 
     public IRepository<Card> CurrentRepository => _currentRepository;
+
     public string CurrentMode => _currentMode;
 
     public PersistenceManager(MemoryRepository memoryRepository, MySQLRepository mySQLRepository, string initialMode)

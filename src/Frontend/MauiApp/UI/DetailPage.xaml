@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiApp.UI.DetailPage"
+             Title="Editar Carta"
+             BackgroundColor="{AppThemeBinding Light=White, Dark=#121212}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="15" Padding="25">
+
+            <Label Text="Detalles de la Carta" FontSize="22" FontAttributes="Bold" 
+                   TextColor="{AppThemeBinding Light=#512BD4, Dark=#B39DDB}" />
+
+            <Label Text="Nombre" FontSize="12" FontAttributes="Bold" TextColor="Gray"/>
+            <Border Stroke="Gray" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="5,0" BackgroundColor="Transparent">
+                <Entry x:Name="txtName" Placeholder="Ej. Black Lotus" TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            </Border>
+
+            <Label Text="Costo de Maná" FontSize="12" FontAttributes="Bold" TextColor="Gray"/>
+            <Border Stroke="Gray" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="5,0" BackgroundColor="Transparent">
+                <Entry x:Name="txtMana" Placeholder="Ej. {3}" TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            </Border>
+
+            <Label Text="Tipo" FontSize="12" FontAttributes="Bold" TextColor="Gray"/>
+            <Border Stroke="Gray" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="5,0" BackgroundColor="Transparent">
+                <Entry x:Name="txtType" Placeholder="Ej. Artifact" TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            </Border>
+
+            <Label Text="Rareza" FontSize="12" FontAttributes="Bold" TextColor="Gray"/>
+            <Border Stroke="Gray" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="5,0" BackgroundColor="Transparent">
+                <Entry x:Name="txtRarity" Placeholder="Ej. Rare" TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            </Border>
+
+            <Label Text="Set (Expansión)" FontSize="12" FontAttributes="Bold" TextColor="Gray"/>
+            <Border Stroke="Gray" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="5,0" BackgroundColor="Transparent">
+                <Entry x:Name="txtSet" Placeholder="Ej. Alpha" TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            </Border>
+
+            <Label Text="Texto de Reglas" FontSize="12" FontAttributes="Bold" TextColor="Gray"/>
+            <Border Stroke="Gray" StrokeThickness="1" StrokeShape="RoundRectangle 8" Padding="5,0" BackgroundColor="Transparent">
+                <Editor x:Name="txtText" Placeholder="Descripción..." HeightRequest="80" TextColor="{AppThemeBinding Light=Black, Dark=White}"/>
+            </Border>
+
+            <Button Text="GUARDAR" Clicked="Save_Clicked" 
+                    BackgroundColor="#512BD4" TextColor="White" 
+                    HeightRequest="50" CornerRadius="10" Margin="0,20,0,0"/>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
