@@ -204,7 +204,7 @@
 
                     <!-- Set -->
                     <StackPanel Grid.Row="4" Grid.Column="2">
-                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Set (código)"/>
+                        <TextBlock Style="{StaticResource FieldLabelStyle}" Text="Set (codigo)"/>
                         <TextBox Name="txtSet"/>
                     </StackPanel>
 

@@ -18,7 +18,7 @@
         <SolidColorBrush x:Key="CardBrush" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="BorderBrushSoft" Color="#E5E7EB"/>
 
-        <!-- Menu superior: estilo más “app bar” -->
+        <!-- Menu superior: estilo mas "app bar" -->
         <Style TargetType="{x:Type Menu}">
             <Setter Property="Background" Value="{StaticResource CardBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
@@ -32,7 +32,7 @@
             <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
         </Style>
 
-        <!-- Botones del lateral (accesos rápidos) -->
+        <!-- Botones del lateral (accesos rapidos) -->
         <Style x:Key="NavButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Height" Value="40"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
@@ -78,16 +78,16 @@
                 BorderThickness="0,0,0,1">
             <DockPanel LastChildFill="True">
                 <TextBlock DockPanel.Dock="Left"
-                           Text="MTG · Proyecto Final"
+                           Text="MTG Proyecto Final"
                            Margin="16,10"
                            FontSize="14"
                            FontWeight="SemiBold"
                            Foreground="{StaticResource TextBrush}"/>
 
-                <!-- Mantiene tu menú y eventos -->
+                <!-- Mantiene tu menu y eventos -->
                 <Menu DockPanel.Dock="Right">
                     <MenuItem Header="Datos">
-                        <MenuItem Header="Configuración" Click="MenuConfiguration_Click"/>
+                        <MenuItem Header="Configuracion" Click="MenuConfiguration_Click"/>
                         <MenuItem Header="Ver todas las cartas" Click="MenuMaster_Click"/>
                         <MenuItem Header="Nueva carta" Click="MenuNew_Click"/>
                     </MenuItem>
@@ -107,7 +107,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Lateral: accesos rápidos (misma funcionalidad: mismos handlers) -->
+            <!-- Lateral: accesos rapidos (misma funcionalidad: mismos handlers) -->
             <Border Grid.Column="0"
                     Background="{StaticResource CardBrush}"
                     BorderBrush="{StaticResource BorderBrushSoft}"
@@ -115,23 +115,23 @@
                     CornerRadius="16"
                     Padding="14">
                 <StackPanel>
-                    <TextBlock Text="Navegación"
+                    <TextBlock Text="Navegacion"
                                FontSize="12.5"
                                Foreground="{StaticResource SubtleTextBrush}"
                                Margin="4,0,0,12"/>
 
-                    <Button Style="{StaticResource NavButtonStyle}" Content="Configuración" Click="MenuConfiguration_Click"/>
+                    <Button Style="{StaticResource NavButtonStyle}" Content="Configuracion" Click="MenuConfiguration_Click"/>
                     <Button Style="{StaticResource NavButtonStyle}" Content="Ver todas las cartas" Click="MenuMaster_Click"/>
                     <Button Style="{StaticResource NavButtonStyle}" Content="Nueva carta" Click="MenuNew_Click"/>
 
                     <Separator Margin="0,10,0,10"/>
 
-                    <Button Style="{StaticResource NavButtonStyle}" Content="MCP · Consulta natural" Click="MenuMCP_Click"/>
+                    <Button Style="{StaticResource NavButtonStyle}" Content="MCP Consulta natural" Click="MenuMCP_Click"/>
                     <Button Style="{StaticResource NavButtonStyle}" Content="Salir" Click="MenuExit_Click"/>
                 </StackPanel>
             </Border>
 
-            <!-- Área de contenido (se mantiene el nombre ContentArea) -->
+            <!-- Area de contenido (se mantiene el nombre ContentArea) -->
             <Border Grid.Column="2"
                     Background="{StaticResource CardBrush}"
                     BorderBrush="{StaticResource BorderBrushSoft}"
@@ -140,12 +140,12 @@
                     Padding="18">
                 <Grid Name="ContentArea" Background="Transparent">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="Selecciona una opción para empezar"
+                        <TextBlock Text="Selecciona una opcion para empezar"
                                    Foreground="{StaticResource TextBrush}"
                                    FontSize="18"
                                    FontWeight="SemiBold"
                                    HorizontalAlignment="Center"/>
-                        <TextBlock Text="Usa el menú superior o la barra lateral."
+                        <TextBlock Text="Usa el menu superior o la barra lateral."
                                    Margin="0,8,0,0"
                                    Foreground="{StaticResource SubtleTextBrush}"
                                    FontSize="13"
